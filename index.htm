@@ -1,210 +1,447 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cover Page Generator - Double Logo</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        body { font-family: 'Arial', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; gap: 20px; }
-        
-        #controls { width: 350px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); height: 95vh; overflow-y: auto; }
-        .input-group { margin-bottom: 10px; }
-        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 2px; }
-        input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; margin-top: 10px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; background: #28a745; color: white; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTEC Cover Page Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Crimson+Pro:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1e6b3e;
+    --green-dark: #134d2b;
+    --green-light: #eaf5ee;
+    --green-mid: #c8e0d0;
+    --text: #1a2218;
+    --muted: #5a6b58;
+    --border: #b8d4c0;
+    --red: #a81c1c;
+    --bg: #f0f7f2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hind Siliguri', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 48px;
+  }
 
-        #preview-container { flex-grow: 1; display: flex; justify-content: center; }
-        
-        #cover-page {
-            width: 210mm;
-            height: 296.5mm; 
-            background: white;
-            padding: 10mm 20mm;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
+  /* ── HEADER ── */
+  .top-bar {
+    width: 100%;
+    background: white;
+    border-bottom: 2px solid var(--green-mid);
+    padding: 14px 20px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 28px;
+  }
+  .top-bar .header-logos {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 7px;
+  }
+  /* bd-logo: 60px, ttec-logo: 90px — set via inline or here */
+  .top-bar .header-logos .logo-bd   { height: 54px; width: auto; object-fit: contain; }
+  .top-bar .header-logos .logo-ttec { height: 54px; width: auto; object-fit: contain; }
+  .top-bar h1 {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .top-bar p { font-size: 0.83rem; color: var(--muted); }
 
-        /* Top Small Logo */
-        .top-small-logo { width: 45px; height: 45px; object-fit: contain; margin-bottom: 0px; }
+  /* ── CARD ── */
+  .card {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 2px 20px rgba(20,80,40,0.10);
+    width: 100%;
+    max-width: 500px;
+    padding: 26px 24px 22px;
+    margin: 0 14px;
+  }
 
-        .govt-text { font-size: 11pt; margin: 0; font-weight: bold; }
-        .logo-img { width: 85px; height: 100px; object-fit: contain; margin: 10px 0; }
-        .college-name { color: #0000FF; font-size: 22pt; font-weight: bold; margin-bottom: 0px; text-transform: uppercase; }
-        .location { font-size: 15pt; margin-bottom: 12px; }
-        .degree { color: #3A86AD; font-size: 20pt; margin: 9px 0; font-weight: bold; }
-        .university { color: #3A86AD; font-size: 18pt; font-weight: bold; margin-bottom: 8px; }
-        
-        .practical-tag { 
-            background: #2E7D32; color: white; padding: 6px 40px; 
-            font-weight: bold; font-size: 20pt; border-radius: 5px; margin: 15px 0;
-        }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-bottom: 13px; }
+  .field-row.full { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  label { font-size: 0.79rem; font-weight: 600; color: var(--text); }
+  label .req { color: var(--red); }
 
-        .dept-name { color: #800000; font-size: 20pt; font-weight: bold; margin: 5px 0; }
-        .academic-info { font-size: 15pt; margin: 5px 0; }
-        .subject-box { font-size: 15pt; font-weight: bold; margin: 15px 0; line-height: 1.6; }
+  input, select {
+    padding: 8px 11px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    font-family: 'Hind Siliguri', sans-serif;
+    font-size: 0.87rem;
+    color: var(--text);
+    background: #fafcfa;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none; -webkit-appearance: none;
+  }
+  input::placeholder { color: #b0bcae; }
+  input:focus, select:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(30,107,62,0.10);
+    background: white;
+  }
+  .sel-wrap { position: relative; }
+  .sel-wrap::after {
+    content: '▾'; position: absolute; right: 10px; top: 50%;
+    transform: translateY(-50%); color: var(--muted);
+    pointer-events: none; font-size: 0.85rem;
+  }
+  .sel-wrap select { padding-right: 26px; cursor: pointer; }
 
-        .submission-table {
-            width: 100%; border-collapse: collapse; 
-            margin-top: 20mm; 
-            border: 1.5px solid black; table-layout: fixed;
-        }
-        .submission-table td {
-            border: 1px solid black; padding: 18px 15px; vertical-align: top; text-align: left; font-size: 13pt;
-        }
-        
-        .table-header { 
-            font-size: 16pt; font-weight: bold; text-align: center; display: inline-block; width: 100%;
-            margin-bottom: 12px; padding-bottom: 5px; border-bottom: 1.5px solid black;
-        }
-        
-        .teacher-info { text-align: center; line-height: 1.4; }
-        .student-info { margin-left: 5px; line-height: 1.6; }
-    </style>
+  .divider { height: 1px; background: var(--green-mid); margin: 16px 0; }
+
+  .sub-box {
+    border: 1.5px dashed var(--green);
+    border-radius: 9px;
+    padding: 14px 14px 10px;
+    background: var(--green-light);
+    margin-bottom: 14px;
+  }
+  .sub-box-label { font-size: 0.88rem; font-weight: 700; color: var(--green-dark); margin-bottom: 11px; }
+
+  .btn-dl {
+    width: 100%; padding: 12px;
+    background: var(--green); color: white;
+    border: none; border-radius: 8px;
+    font-family: 'Hind Siliguri', sans-serif;
+    font-size: 0.97rem; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 12px rgba(30,107,62,0.28);
+    transition: background 0.15s, transform 0.12s;
+  }
+  .btn-dl:hover { background: var(--green-dark); transform: translateY(-1px); }
+
+  .footer { margin-top: 18px; font-size: 0.76rem; color: var(--muted); text-align: center; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(70px);
+    background: #134d2b; color: white;
+    padding: 11px 26px; border-radius: 40px;
+    font-size: 0.88rem; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+    opacity: 0; transition: transform 0.3s, opacity 0.3s;
+    z-index: 999; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  @media (max-width: 520px) {
+    .field-row { grid-template-columns: 1fr; }
+    .card { padding: 18px 13px; }
+  }
+</style>
 </head>
 <body>
 
-<div id="controls">
-    <h2 style="font-size: 18px; margin-top: 0;">Settings</h2>
-    <div class="input-group"><label>Top Small Logo</label><input type="file" id="topLogoInput"></div>
-    <div class="input-group"><label>Main Center Logo</label><input type="file" id="logoInput"></div>
-    <hr>
-    <div class="input-group"><label>College Name</label><input type="text" id="inCollege" value="Tangail Textile Engineering College" oninput="update()"></div>
-    <div class="input-group"><label>Degree</label><input type="text" id="inDegree" value="B.Sc. in Textile Engineering" oninput="update()"></div>
-    <div class="input-group"><label>University</label><input type="text" id="inUni" value="Bangladesh University of Textiles (BUTex)" oninput="update()"></div>
-    <div class="input-group"><label>Department</label><input type="text" id="inDept" value="Department of Apparel Engineering" oninput="update()"></div>
-    <div class="input-group"><label>Level-Term</label><input type="text" id="inLevel" value="Level-3 Term-1" oninput="update()"></div>
-    <div class="input-group"><label>Session</label><input type="text" id="inSession" value="2021-2022" oninput="update()"></div>
-    <div class="input-group"><label>Subject Name</label><input type="text" id="inSubName" value="Fabric Structure & Design (Practical)" oninput="update()"></div>
-    <div class="input-group"><label>Subject Code</label><input type="text" id="inSubCode" value="FE-306" oninput="update()"></div>
-    <div class="input-group"><label>Teacher Name</label><input type="text" id="inTeacher" value="Md. Saiful Islam" oninput="update()"></div>
-    <div class="input-group"><label>Teacher Title</label><input type="text" id="inTTitle" value="Chief Instructor" oninput="update()"></div>
-    <div class="input-group"><label>Student Name</label><input type="text" id="inStudent" value="Sakib Hasan Bipul" oninput="update()"></div>
-    <div class="input-group"><label>Roll Number</label><input type="text" id="inRoll" value="22070401019" oninput="update()"></div>
-    
-    <button onclick="downloadPDF()">Download Cover Page</button>
+<!-- ══════════ HEADER ══════════ -->
+<div class="top-bar">
+  <div class="header-logos">
+    <!-- Bangladesh Government Logo (60×60 px PNG, transparent bg) -->
+    <img class="logo-bd"   src="images/bd-logo.png"   alt="BD Logo"   onerror="this.style.display='none'">
+    <!-- TTEC College Logo (90×90 px PNG, transparent bg) -->
+    <img class="logo-ttec" src="images/ttec-logo.png" alt="TTEC Logo" onerror="this.style.display='none'">
+  </div>
+  <h1>Cover Page Generator</h1>
+  <p>Tangail Textile Engineering College — Fill in the details below.</p>
 </div>
 
-<div id="preview-container">
-    <div id="cover-page">
-        <img id="topLogoImg" class="top-small-logo" src="https://via.placeholder.com/45" alt="Top Logo">
-        
-        <div class="govt-text">Government of the People's Republic of Bangladesh</div>
-        
-        <img id="logoImg" class="logo-img" src="https://via.placeholder.com/85" alt="Main Logo">
-        
-        <div class="college-name" id="outCollege">Tangail Textile Engineering College</div>
-        <div class="location">Kalihati, Tangail</div>
-        
-        <div class="degree" id="outDegree">B.Sc. in Textile Engineering</div>
-        <div style="font-size: 13pt;">Affiliated by</div>
-        <div class="university" id="outUni">Bangladesh University of Textiles (BUTex)</div>
-        
-        <div class="practical-tag">PRACTICAL</div>
-        
-        <div class="dept-name" id="outDept">Department of Apparel Engineering</div>
-        
-        <div class="academic-info">
-            <span id="outLevel">Level-3 Term-1</span><br>
-            <span id="outSession">Session: 2021-2022</span>
-        </div>
-        
-        <div class="subject-box">
-            Subject Name: <span id="outSubName">Fabric Structure & Design (Practical)</span><br>
-            Subject Code: <span id="outSubCode">FE-306</span>
-        </div>
+<!-- ══════════ FORM CARD ══════════ -->
+<div class="card">
 
-        <table class="submission-table">
-            <tr>
-                <td>
-                    <span class="table-header">Submitted To</span>
-                    <div class="teacher-info">
-                        <strong id="outTeacher">Md. Saiful Islam</strong><br>
-                        <span id="outTTitle">Chief Instructor</span><br>
-                        Tangail Textile Engineering College<br>
-                        Kalihati, Tangail
-                    </div>
-                </td>
-                <td>
-                    <span class="table-header">Submitted By</span>
-                    <div class="student-info">
-                        Name : <span id="outStudent">Sakib Hasan Bipul</span><br>
-                        Roll : <span id="outRoll">22070401019</span><br>
-                        Dept : <span id="outDeptSmall">Apparel Engineering</span>
-                    </div>
-                </td>
-            </tr>
-        </table>
+  <div class="field-row">
+    <div class="field">
+      <label>Department <span class="req">*</span></label>
+      <div class="sel-wrap">
+        <select id="department">
+          <option value="">Select Department</option>
+          <option>Apparel Engineering</option>
+          <option>Wet Processing Engineering</option>
+          <option>Yarn Engineering</option>
+          <option>Fabric Engineering</option>
+          <option>Industrial & Production Engineering</option>
+        </select>
+      </div>
     </div>
+    <div class="field">
+      <label>Report Type <span class="req">*</span></label>
+      <div class="sel-wrap">
+        <select id="reportType">
+          <option value="">Select Type</option>
+          <option>PRACTICAL</option>
+          <option>ASSIGNMENT</option>
+          <option>REPORT</option>
+          <option>PROJECT</option>
+          <option>TERM PAPER</option>
+          <option>THESIS</option>
+          <option>LAB REPORT</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Subject Name <span class="req">*</span></label>
+      <input type="text" id="subjectName" placeholder="e.g. Fabric Structure & Design">
+    </div>
+    <div class="field">
+      <label>Subject Code <span class="req">*</span></label>
+      <input type="text" id="subjectCode" placeholder="e.g. FE-306">
+    </div>
+  </div>
+
+  <div class="field-row full">
+    <div class="field">
+      <label>Experiment / Topic (Optional)</label>
+      <input type="text" id="topic" placeholder="e.g. Plain Weave Structure Analysis">
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Student Name <span class="req">*</span></label>
+      <input type="text" id="studentName" placeholder="Full Name">
+    </div>
+    <div class="field">
+      <label>Roll Number <span class="req">*</span></label>
+      <input type="text" id="studentRoll" placeholder="e.g. 22070401019">
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Level & Term <span class="req">*</span></label>
+      <div class="sel-wrap">
+        <select id="levelTerm">
+          <option value="">Select Level-Term</option>
+          <option>Level-1 Term-1</option><option>Level-1 Term-2</option>
+          <option>Level-2 Term-1</option><option>Level-2 Term-2</option>
+          <option>Level-3 Term-1</option><option>Level-3 Term-2</option>
+          <option>Level-4 Term-1</option><option>Level-4 Term-2</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Session <span class="req">*</span></label>
+      <div class="sel-wrap">
+        <select id="session">
+          <option value="">Select Session</option>
+          <option>2018-2019</option><option>2019-2020</option>
+          <option>2020-2021</option><option>2021-2022</option>
+          <option>2022-2023</option><option>2023-2024</option>
+          <option>2024-2025</option><option>2025-2026</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="field-row full">
+    <div class="field">
+      <label>Submission Date</label>
+      <input type="date" id="submissionDate">
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sub-box">
+    <div class="sub-box-label">📌 Submitted To</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Teacher Name <span class="req">*</span></label>
+        <input type="text" id="teacherName" placeholder="e.g. Md. Saiful Islam">
+      </div>
+      <div class="field">
+        <label>Designation <span class="req">*</span></label>
+        <input type="text" id="teacherDesig" placeholder="e.g. Chief Instructor">
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-dl" onclick="downloadCover()">⬇ Download Cover Page</button>
 </div>
 
+<div class="footer">Developed for Tangail Textile Engineering College, Kalihati, Tangail</div>
+<div class="toast" id="toast"></div>
+
+<!-- ══════════ SCRIPT ══════════ -->
 <script>
-    const logoInput = document.getElementById('logoInput');
-    const logoImg = document.getElementById('logoImg');
-    const topLogoInput = document.getElementById('topLogoInput');
-    const topLogoImg = document.getElementById('topLogoImg');
+function v(id){ return document.getElementById(id).value.trim(); }
 
-    // Load saved logos
-    window.onload = () => {
-        const savedLogo = localStorage.getItem('savedLogo');
-        const savedTopLogo = localStorage.getItem('savedTopLogo');
-        if (savedLogo) logoImg.src = savedLogo;
-        if (savedTopLogo) topLogoImg.src = savedTopLogo;
+function showToast(msg, dur=3500){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function getImgBase64(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      resolve(c.toDataURL());
     };
+    img.onerror = () => resolve(null);
+    img.src = src + '?t=' + Date.now();
+  });
+}
 
-    // Main Logo Upload
-    logoInput.onchange = e => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            logoImg.src = reader.result;
-            localStorage.setItem('savedLogo', reader.result);
-        };
-        reader.readAsDataURL(e.target.files[0]);
-    };
+async function downloadCover(){
+  const req = [
+    ['department','Department'],['reportType','Report Type'],
+    ['subjectName','Subject Name'],['subjectCode','Subject Code'],
+    ['levelTerm','Level & Term'],['session','Session'],
+    ['studentName','Student Name'],['studentRoll','Roll Number'],
+    ['teacherName','Teacher Name'],['teacherDesig','Designation'],
+  ];
+  for(const [id,label] of req){
+    if(!v(id)){ showToast('⚠ Please fill: '+label); document.getElementById(id).focus(); return; }
+  }
 
-    // Top Logo Upload
-    topLogoInput.onchange = e => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            topLogoImg.src = reader.result;
-            localStorage.setItem('savedTopLogo', reader.result);
-        };
-        reader.readAsDataURL(e.target.files[0]);
-    };
+  const dept      = v('department'),
+        type      = v('reportType'),
+        subject   = v('subjectName'),
+        code      = v('subjectCode'),
+        topic     = v('topic'),
+        levelTerm = v('levelTerm'),
+        session   = v('session'),
+        sName     = v('studentName'),
+        sRoll     = v('studentRoll'),
+        dateRaw   = v('submissionDate'),
+        tName     = v('teacherName'),
+        tDesig    = v('teacherDesig');
 
-    function update() {
-        document.getElementById('outCollege').innerText = document.getElementById('inCollege').value;
-        document.getElementById('outDegree').innerText = document.getElementById('inDegree').value;
-        document.getElementById('outUni').innerText = document.getElementById('inUni').value;
-        document.getElementById('outDept').innerText = document.getElementById('inDept').value;
-        document.getElementById('outDeptSmall').innerText = document.getElementById('inDept').value.replace('Department of ', '');
-        document.getElementById('outLevel').innerText = document.getElementById('inLevel').value;
-        document.getElementById('outSession').innerText = "Session: " + document.getElementById('inSession').value;
-        document.getElementById('outSubName').innerText = document.getElementById('inSubName').value;
-        document.getElementById('outSubCode').innerText = document.getElementById('inSubCode').value;
-        document.getElementById('outTeacher').innerText = document.getElementById('inTeacher').value;
-        document.getElementById('outTTitle').innerText = document.getElementById('inTTitle').value;
-        document.getElementById('outStudent').innerText = document.getElementById('inStudent').value;
-        document.getElementById('outRoll').innerText = document.getElementById('inRoll').value;
-    }
+  const dateStr = dateRaw
+    ? new Date(dateRaw).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})
+    : '';
 
-    function downloadPDF() {
-        const element = document.getElementById('cover-page');
-        const opt = {
-            margin: 0,
-            filename: 'Official_Cover_Page.pdf',
-            image: { type: 'jpeg', quality: 1 },
-            html2canvas: { scale: 3, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
-    }
+  const bdLogo64   = await getImgBase64('images/bd-logo.png');
+  const ttecLogo64 = await getImgBase64('images/ttec-logo.png');
+
+  // Logos HTML — sizes exactly matching original cover page
+  const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;">` : '';
+  const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:80px;width:auto;object-fit:contain;">` : '';
+
+  const topicHTML = topic
+    ? `<p style="font-size:14px;font-weight:bold;color:#1e6b3e;text-align:center;margin-top:5px;">Experiment/Topic: ${topic}</p>`
+    : '';
+  const dateHTML = dateStr
+    ? `<p style="font-size:13px;text-align:center;color:#555;margin-top:4px;">Date of Submission: ${dateStr}</p>`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Times New Roman',Times,serif;background:white;}
+.page{
+  width:210mm;height:297mm;
+  padding:16mm 20mm 14mm;
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;
+  overflow:hidden;
+}
+.ob{position:absolute;inset:8mm;border:2.5px solid #1e6b3e;}
+.ib{position:absolute;inset:11.5mm;border:0.6px solid #b8d4c0;}
+
+/* ── content ── */
+.govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:7px;}
+.logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:7px;}
+.cn{font-size:25px;font-weight:900;color:#1a3480;text-align:center;
+    text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:Arial,sans-serif;}
+.loc{font-size:13px;color:#444;text-align:center;margin-bottom:9px;}
+.hr{width:65%;height:1px;background:linear-gradient(90deg,transparent,#1e6b3e,transparent);margin:6px auto;}
+.deg{font-size:19px;font-weight:bold;color:#1a6b8a;text-align:center;margin-bottom:2px;font-family:Arial,sans-serif;}
+.aff{font-size:13px;color:#444;text-align:center;}
+.uni{font-size:15px;font-weight:bold;color:#1a3480;text-align:center;margin-bottom:9px;font-family:Arial,sans-serif;}
+.badge{background:#1e6b3e;color:white;font-size:18px;font-weight:bold;
+       letter-spacing:0.1em;padding:9px 55px;display:inline-block;
+       font-family:Arial,sans-serif;margin:9px 0 11px;}
+.dept{font-size:21px;font-weight:bold;color:#8b0000;text-align:center;margin-bottom:4px;font-family:Arial,sans-serif;}
+.lvl{font-size:14px;color:#1a1a1a;text-align:center;line-height:1.9;margin-bottom:9px;}
+.sb p{font-size:15px;font-weight:bold;line-height:2;text-align:center;}
+
+/* table always ~70mm from bottom */
+.spacer{flex:1;min-height:8px;max-height:25mm;}
+table{width:100%;border-collapse:collapse;border:2px solid #000;margin-top:10px;}
+td{padding:13px 18px;vertical-align:top;border:1.5px solid #000;width:50%;font-size:13.5px;line-height:1.85;}
+.ch{font-size:15.5px;font-weight:bold;text-align:center;
+    border-bottom:1.5px solid #000;padding-bottom:7px;margin-bottom:9px;display:block;}
+@media print{@page{margin:0;size:A4;}body{margin:0;}}
+</style></head>
+<body><div class="page">
+<div class="ob"></div><div class="ib"></div>
+
+<p class="govt">Government of the People's Republic of Bangladesh</p>
+
+${bdHTML   ? `<div class="logo-row">${bdHTML}</div>`   : ''}
+${ttecHTML ? `<div class="logo-row">${ttecHTML}</div>` : ''}
+
+<p class="cn">Tangail Textile Engineering College</p>
+<p class="loc">Kalihati, Tangail</p>
+<div class="hr"></div>
+
+<p class="deg">B.Sc. in Textile Engineering</p>
+<p class="aff">Affiliated by</p>
+<p class="uni">Bangladesh University of Textiles (BUTex)</p>
+<div class="hr"></div>
+
+<div><span class="badge">${type}</span></div>
+
+<p class="dept">Department of ${dept}</p>
+<p class="lvl">${levelTerm}<br>Session: ${session}</p>
+
+<div class="sb">
+  <p>Subject Name: ${subject}</p>
+  <p>Subject Code: ${code}</p>
+</div>
+
+${topicHTML}
+${dateHTML}
+
+<div class="spacer"></div>
+
+<table><tr>
+  <td>
+    <span class="ch">Submitted To</span>
+    <strong>${tName}</strong><br>
+    ${tDesig}<br>
+    Tangail Textile Engineering College<br>
+    Kalihati, Tangail
+  </td>
+  <td>
+    <span class="ch">Submitted By</span>
+    Name &nbsp;: ${sName}<br>
+    Roll &nbsp;&nbsp;&nbsp;: ${sRoll}<br>
+    Dept &nbsp;&nbsp;: ${dept}
+  </td>
+</tr></table>
+
+</div></body></html>`;
+
+  const win = window.open('','_blank','width=920,height=760');
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => setTimeout(() => { win.focus(); win.print(); }, 800);
+  showToast('✅ Cover page ready! Save as PDF to download.', 4000);
+}
 </script>
-
 </body>
 </html>
