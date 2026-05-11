@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TTEC Cover Page Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Crimson+Pro:wght@600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   :root {
     --green: #1e6b3e;
@@ -138,12 +137,6 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-  #coverPageContainer {
-    display: none;
-    width: 210mm;
-    height: 297mm;
-  }
-
   @media (max-width: 520px) {
     .field-row { grid-template-columns: 1fr; }
     .card { padding: 18px 13px; }
@@ -156,7 +149,7 @@
 <div class="top-bar">
   <div class="header-logos">
     <!-- TTEC College Logo (54×54 px PNG, transparent bg) -->
-    <img class="logo-ttec" src="https://raw.githubusercontent.com/bipul-sakib/TTEC-Cover-Page/main/images/ttec-logo.png" alt="TTEC Logo" onerror="this.style.display='none'">
+    <img class="logo-ttec" src="images/ttec-logo.png" alt="TTEC Logo" onerror="this.style.display='none'">
   </div>
   <h1>Cover Page Generator</h1>
   <p>Tangail Textile Engineering College — Fill in the details below.</p>
@@ -285,9 +278,6 @@
 <div class="footer">Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
 <div class="toast" id="toast"></div>
 
-<!-- Hidden container for PDF generation -->
-<div id="coverPageContainer"></div>
-
 <!-- ══════════ SCRIPT ══════════ -->
 <script>
 function v(id){ return document.getElementById(id).value.trim(); }
@@ -303,22 +293,12 @@ function getImgBase64(src) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      try {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth; 
-        c.height = img.naturalHeight;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        resolve(c.toDataURL('image/png'));
-      } catch(e) {
-        console.warn('Canvas error for ' + src, e);
-        resolve(null);
-      }
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      resolve(c.toDataURL());
     };
-    img.onerror = () => {
-      console.warn('Failed to load image: ' + src);
-      resolve(null);
-    };
+    img.onerror = () => resolve(null);
     img.src = src + '?t=' + Date.now();
   });
 }
@@ -334,8 +314,6 @@ async function downloadCover(){
   for(const [id,label] of req){
     if(!v(id)){ showToast('⚠ Please fill: '+label); document.getElementById(id).focus(); return; }
   }
-
-  showToast('⏳ Generating PDF...', 8000);
 
   const dept      = v('department'),
         type      = v('reportType'),
@@ -354,9 +332,9 @@ async function downloadCover(){
     ? new Date(dateRaw).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})
     : '';
 
-  const bdLogo64      = await getImgBase64('https://raw.githubusercontent.com/bipul-sakib/TTEC-Cover-Page/main/images/bd-logo.png');
-  const ttecLogo64    = await getImgBase64('https://raw.githubusercontent.com/bipul-sakib/TTEC-Cover-Page/main/images/ttec-logo.png');
-  const watermark64   = await getImgBase64('https://raw.githubusercontent.com/bipul-sakib/TTEC-Cover-Page/main/images/watermark.png');
+  const bdLogo64      = await getImgBase64('images/bd-logo.png');
+  const ttecLogo64    = await getImgBase64('images/ttec-logo.png');
+  const watermark64   = await getImgBase64('images/watermark.png');
 
   // Logos HTML — sizes exactly matching original cover page
   const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;">` : '';
@@ -391,7 +369,7 @@ body{font-family:'Times New Roman',Times,serif;background:white;}
 /* ── content ── */
 .govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:7px;position:relative;z-index:2;}
 .logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:7px;position:relative;z-index:2;}
-.cn{font-size:24px;font-weight:1000;color:#1a3480;text-align:center;
+.cn{font-size:28px;font-weight:1000;color:#1a3480;text-align:center;
     text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:'Arial Black',sans-serif;position:relative;z-index:2;}
 .loc{font-size:13px;color:#444;text-align:center;margin-bottom:9px;position:relative;z-index:2;}
 .ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:9px;position:relative;z-index:2;}
@@ -470,36 +448,21 @@ ${dateHTML}
 
 </div></body></html>`;
 
-  // Create hidden container with content
-  const container = document.getElementById('coverPageContainer');
-  container.innerHTML = html;
-  const element = container.querySelector('.page');
-
-  if (!element) {
-    showToast('❌ Error: Could not generate PDF template', 3500);
-    return;
-  }
-
-  // Generate PDF filename
+  const win = window.open('','_blank','width=920,height=760');
+  win.document.write(html);
+  win.document.close();
+  
+  // Set filename for PDF download: Subject Name_Subject Code.pdf
   const filename = `${subject}_${code}.pdf`;
-
-  // Configure html2pdf options
-  const options = {
-    margin: 0,
-    filename: filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
-    jsPDF: { format: 'a4', orientation: 'portrait' }
-  };
-
-  // Generate and download PDF
-  try {
-    await html2pdf().set(options).from(element).save();
-    showToast('✅ PDF downloaded: ' + filename, 3500);
-  } catch (error) {
-    console.error('PDF generation error:', error);
-    showToast('❌ Error: ' + (error.message || 'PDF generation failed'), 5000);
-  }
+  
+  win.onload = () => setTimeout(() => { 
+    win.focus(); 
+    win.print(); 
+    // Try to set filename (works in some browsers when printing to PDF)
+    if(win.document.title) win.document.title = filename;
+  }, 800);
+  
+  showToast('✅ Cover page ready! Save as PDF: ' + filename, 4000);
 }
 </script>
 </body>
