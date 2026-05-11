@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TTEC Cover Page Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Crimson+Pro:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   :root {
     --green: #1e6b3e;
@@ -136,6 +137,12 @@
     z-index: 999; pointer-events: none;
   }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  #coverPageContainer {
+    display: none;
+    width: 210mm;
+    height: 297mm;
+  }
 
   @media (max-width: 520px) {
     .field-row { grid-template-columns: 1fr; }
@@ -278,6 +285,9 @@
 <div class="footer">Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
 <div class="toast" id="toast"></div>
 
+<!-- Hidden container for PDF generation -->
+<div id="coverPageContainer"></div>
+
 <!-- ══════════ SCRIPT ══════════ -->
 <script>
 function v(id){ return document.getElementById(id).value.trim(); }
@@ -369,7 +379,7 @@ body{font-family:'Times New Roman',Times,serif;background:white;}
 /* ── content ── */
 .govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:7px;position:relative;z-index:2;}
 .logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:7px;position:relative;z-index:2;}
-.cn{font-size:28px;font-weight:1000;color:#1a3480;text-align:center;
+.cn{font-size:24px;font-weight:1000;color:#1a3480;text-align:center;
     text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:'Arial Black',sans-serif;position:relative;z-index:2;}
 .loc{font-size:13px;color:#444;text-align:center;margin-bottom:9px;position:relative;z-index:2;}
 .ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:9px;position:relative;z-index:2;}
@@ -448,21 +458,31 @@ ${dateHTML}
 
 </div></body></html>`;
 
-  const win = window.open('','_blank','width=920,height=760');
-  win.document.write(html);
-  win.document.close();
-  
-  // Set filename for PDF download: Subject Name_Subject Code.pdf
+  // Create hidden container with content
+  const container = document.getElementById('coverPageContainer');
+  container.innerHTML = html;
+  const element = container.querySelector('.page');
+
+  // Generate PDF filename
   const filename = `${subject}_${code}.pdf`;
-  
-  win.onload = () => setTimeout(() => { 
-    win.focus(); 
-    win.print(); 
-    // Try to set filename (works in some browsers when printing to PDF)
-    if(win.document.title) win.document.title = filename;
-  }, 800);
-  
-  showToast('✅ Cover page ready! Save as PDF: ' + filename, 4000);
+
+  // Configure html2pdf options
+  const options = {
+    margin: 0,
+    filename: filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { format: 'a4', orientation: 'portrait' }
+  };
+
+  // Generate and download PDF
+  try {
+    await html2pdf().set(options).from(element).save();
+    showToast('✅ PDF downloaded: ' + filename, 3500);
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    showToast('❌ Error generating PDF. Try again.', 3500);
+  }
 }
 </script>
 </body>
