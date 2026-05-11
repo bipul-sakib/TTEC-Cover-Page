@@ -332,12 +332,18 @@ async function downloadCover(){
     ? new Date(dateRaw).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})
     : '';
 
-  const bdLogo64   = await getImgBase64('images/bd-logo.png');
-  const ttecLogo64 = await getImgBase64('images/ttec-logo.png');
+  const bdLogo64      = await getImgBase64('images/bd-logo.png');
+  const ttecLogo64    = await getImgBase64('images/ttec-logo.png');
+  const watermark64   = await getImgBase64('images/watermark.png');
 
   // Logos HTML — sizes exactly matching original cover page
   const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;">` : '';
   const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:120px;width:auto;object-fit:contain;">` : '';
+
+  // Watermark CSS — positioned behind all content
+  const watermarkCSS = watermark64
+    ? `.page::before{content:'';position:absolute;inset:0;background-image:url('${watermark64}');background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0.15;z-index:0;pointer-events:none;}`
+    : '';
 
   const topicHTML = topic
     ? `<p style="font-size:14px;font-weight:bold;color:#1e6b3e;text-align:center;margin-top:5px;">Experiment/Topic: ${topic}</p>`
@@ -359,34 +365,38 @@ body{font-family:'Times New Roman',Times,serif;background:white;}
   display:flex;flex-direction:column;align-items:center;
   overflow:hidden;
 }
-.ob{position:absolute;inset:8mm;border:2.5px solid #1e6b3e;}
-.ib{position:absolute;inset:11.5mm;border:0.6px solid #b8d4c0;}
+.ob{position:absolute;inset:8mm;border:2.5px solid #1e6b3e;z-index:1;}
+.ib{position:absolute;inset:11.5mm;border:0.6px solid #b8d4c0;z-index:1;}
 
 /* ── content ── */
-.govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:7px;}
-.logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:7px;}
+.govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:7px;position:relative;z-index:2;}
+.logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:7px;position:relative;z-index:2;}
 .cn{font-size:28px;font-weight:1000;color:#1a3480;text-align:center;
-    text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:Arial,sans-serif;}
-.loc{font-size:13px;color:#444;text-align:center;margin-bottom:9px;}
-.ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
-.hr{width:65%;height:1px;background:linear-gradient(90deg,transparent,#1e6b3e,transparent);margin:6px auto;}
-.deg{font-size:19px;font-weight:bold;color:#1a6b8a;text-align:center;margin-bottom:2px;font-family:Arial,sans-serif;}
-.aff{font-size:13px;color:#444;text-align:center;}
-.uni{font-size:15px;font-weight:bold;color:#1a3480;text-align:center;margin-bottom:9px;font-family:Arial,sans-serif;}
+    text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:Arial,sans-serif;position:relative;z-index:2;}
+.loc{font-size:13px;color:#444;text-align:center;margin-bottom:9px;position:relative;z-index:2;}
+.ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:9px;position:relative;z-index:2;}
+.hr{width:65%;height:1px;background:linear-gradient(90deg,transparent,#1e6b3e,transparent);margin:6px auto;position:relative;z-index:2;}
+.deg{font-size:19px;font-weight:bold;color:#1a6b8a;text-align:center;margin-bottom:2px;font-family:Arial,sans-serif;position:relative;z-index:2;}
+.aff{font-size:13px;color:#444;text-align:center;position:relative;z-index:2;}
+.uni{font-size:15px;font-weight:bold;color:#1a3480;text-align:center;margin-bottom:9px;font-family:Arial,sans-serif;position:relative;z-index:2;}
 .badge{background:#1e6b3e;color:white;font-size:18px;font-weight:bold;
        letter-spacing:0.1em;padding:9px 55px;display:inline-block;
-       font-family:Arial,sans-serif;margin:9px 0 11px;}
-.dept{font-size:21px;font-weight:bold;color:#8b0000;text-align:center;margin-bottom:4px;font-family:Arial,sans-serif;}
-.lvl{font-size:14px;color:#1a1a1a;text-align:center;line-height:1.9;margin-bottom:9px;}
+       font-family:Arial,sans-serif;margin:9px 0 11px;position:relative;z-index:2;}
+.dept{font-size:21px;font-weight:bold;color:#8b0000;text-align:center;margin-bottom:4px;font-family:Arial,sans-serif;position:relative;z-index:2;}
+.lvl{font-size:14px;color:#1a1a1a;text-align:center;line-height:1.9;margin-bottom:9px;position:relative;z-index:2;}
+.sb{position:relative;z-index:2;}
 .sb p{font-size:15px;font-weight:bold;line-height:2;text-align:center;}
-.dev-info{font-family:'Courier New',monospace;font-size:11px;color:#666;text-align:center;margin-top:8px;}
+.dev-info{font-family:'Courier New',monospace;font-size:11px;color:#666;text-align:center;margin-top:8px;position:relative;z-index:2;}
 
 /* table always ~70mm from bottom */
 .spacer{flex:1;min-height:8px;max-height:25mm;}
-table{width:100%;border-collapse:collapse;border:2px solid #000;margin-top:10px;}
+table{width:100%;border-collapse:collapse;border:2px solid #000;margin-top:10px;position:relative;z-index:2;}
 td{padding:13px 18px;vertical-align:top;border:1.5px solid #000;width:50%;font-size:13.5px;line-height:1.85;}
 .ch{font-size:15.5px;font-weight:bold;text-align:center;
     border-bottom:1.5px solid #000;padding-bottom:7px;margin-bottom:9px;display:block;}
+
+${watermarkCSS}
+
 @media print{@page{margin:0;size:A4;}body{margin:0;}}
 </style></head>
 <body><div class="page">
