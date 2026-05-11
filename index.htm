@@ -151,8 +151,6 @@
   <div class="header-logos">
     <!-- Bangladesh Government Logo (60×60 px PNG, transparent bg) -->
     <img class="logo-bd"   src="images/bd-logo.png"   alt="BD Logo"   onerror="this.style.display='none'">
-    <!-- TTEC College Logo (90×90 px PNG, transparent bg) -->
-    <img class="logo-ttec" src="images/ttec-logo.png" alt="TTEC Logo" onerror="this.style.display='none'">
   </div>
   <h1>Cover Page Generator</h1>
   <p>Tangail Textile Engineering College — Fill in the details below.</p>
@@ -367,6 +365,7 @@ body{font-family:'Times New Roman',Times,serif;background:white;}
 .cn{font-size:25px;font-weight:900;color:#1a3480;text-align:center;
     text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:Arial,sans-serif;}
 .loc{font-size:13px;color:#444;text-align:center;margin-bottom:9px;}
+.ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
 .hr{width:65%;height:1px;background:linear-gradient(90deg,transparent,#1e6b3e,transparent);margin:6px auto;}
 .deg{font-size:19px;font-weight:bold;color:#1a6b8a;text-align:center;margin-bottom:2px;font-family:Arial,sans-serif;}
 .aff{font-size:13px;color:#444;text-align:center;}
@@ -392,10 +391,12 @@ td{padding:13px 18px;vertical-align:top;border:1.5px solid #000;width:50%;font-s
 <p class="govt">Government of the People's Republic of Bangladesh</p>
 
 ${bdHTML   ? `<div class="logo-row">${bdHTML}</div>`   : ''}
-${ttecHTML ? `<div class="logo-row">${ttecHTML}</div>` : ''}
 
 <p class="cn">Tangail Textile Engineering College</p>
 <p class="loc">Kalihati, Tangail</p>
+
+${ttecHTML ? `<div class="ttec-logo">${ttecHTML}</div>` : ''}
+
 <div class="hr"></div>
 
 <p class="deg">B.Sc. in Textile Engineering</p>
