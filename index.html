@@ -135,7 +135,8 @@
     line-height: 1.4;
   }
 
-  .footer { margin-top: 18px; font-size: 0.76rem; color: var(--muted); text-align: center; font-family: 'Courier New', monospace; }
+  .footer { margin-top: 18px; font-size: 0.76rem; color: var(--muted); text-align: center; font-family: 'Courier New', monospace; line-height: 1.5; }
+  .footer .inspiration { margin-bottom: 4px; }
 
   .toast {
     position: fixed; bottom: 24px; left: 50%;
@@ -325,7 +326,11 @@
 
 </div>
 
-<div class="footer">Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
+<div class="footer">
+  <div class="inspiration">Design inspiration: Al-Amin Bhai | YE, TTEC 13th</div>
+  <div>Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div id="print-container"></div>
@@ -392,7 +397,7 @@ async function generateAndPrint(){
   
   const watermarkHTML = `<img src="images/watermark.png" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:70%; height:auto; opacity:0.12; z-index:0; pointer-events:none;">`;
 
-  const topicHTML = topic ? `<p style="font-size:16px;font-weight:bold;color:#1e6b3e;text-align:center;margin-top:4px;position:relative;z-index:2;">Experiment/Topic: ${topic}</p>` : '';
+  const topicHTML = topic ? `<p style="font-size:18px;font-weight:bold;color:#1e6b3e;text-align:center;margin-top:8px;margin-bottom:8px;position:relative;z-index:2;">Experiment/Topic: ${topic}</p>` : '';
   const dateHTML = dateStr ? `<p style="font-size:15px;text-align:center;color:#555;margin-top:3px;position:relative;z-index:2;">Date of Submission: ${dateStr}</p>` : '';
 
   // The CSS applied specifically to the printed page
@@ -424,13 +429,14 @@ async function generateAndPrint(){
       .aff{font-size:15px;color:#444;text-align:center;position:relative;z-index:2;}
       .uni{font-size:17.5px;font-weight:bold;color:#1a3480;text-align:center;margin-bottom:4px;font-family:Arial,sans-serif;position:relative;z-index:2;}
       .badge{background:#1e6b3e;color:white;font-size:20px;font-weight:bold;letter-spacing:0.1em;padding:6px 52px;display:inline-block;font-family:Arial,sans-serif;margin:4px 0 6px;position:relative;z-index:2; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
-      .dept{font-size:23px;font-weight:bold;color:#8b0000;text-align:center;margin-bottom:2px;font-family:Arial,sans-serif;position:relative;z-index:2;}
-      .lvl{font-size:16.5px;color:#1a1a1a;text-align:center;line-height:1.75;margin-bottom:4px;position:relative;z-index:2;}
-      .sb{position:relative;z-index:2;}
-      .sb p{font-size:17.5px;font-weight:bold;line-height:1.85;text-align:center;margin:0;}
+      .dept{font-size:23px;font-weight:bold;color:#8b0000;text-align:center;margin-bottom:6px;font-family:Arial,sans-serif;position:relative;z-index:2;}
+      
+      .lvl{font-size:18.5px;color:#1a1a1a;text-align:center;line-height:1.4;margin:0 0 8px 0;position:relative;z-index:2;}
+      .sb{position:relative;z-index:2;margin-bottom:8px;}
+      .sb p{font-size:19.5px;font-weight:bold;line-height:1.5;text-align:center;margin:0 0 8px 0;}
+      
       .spacer{flex:1;} /* Pushes the table down */
       
-      /* ADDED MARGIN-BOTTOM HERE TO MOVE TABLE UP 5 LINES */
       table{width:100%;border-collapse:collapse;border:2px solid #000;position:relative;z-index:2; margin-bottom: 120px;}
       
       td{padding:12px 15px;vertical-align:top;border:1.5px solid #000;width:50%;font-size:16.5px;line-height:1.75;}
@@ -454,7 +460,10 @@ async function generateAndPrint(){
       <div class="hr"></div>
       <div><span class="badge">${type}</span></div>
       <p class="dept">Department of ${dept}</p>
-      <p class="lvl">${levelTerm}<br>Session: ${session}</p>
+      
+      <p class="lvl">${levelTerm}</p>
+      <p class="lvl">Session: ${session}</p>
+      
       <div class="sb">
         <p>Subject Name: ${subject}</p>
         <p>Subject Code: ${code}</p>
