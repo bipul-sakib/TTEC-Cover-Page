@@ -340,9 +340,9 @@ async function downloadCover(){
   const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;">` : '';
   const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:120px;width:auto;object-fit:contain;">` : '';
 
-  // Watermark CSS — positioned behind all content
+  // Watermark CSS — positioned behind all content at 70% size
   const watermarkCSS = watermark64
-    ? `.page::before{content:'';position:absolute;inset:0;background-image:url('${watermark64}');background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0.15;z-index:0;pointer-events:none;}`
+    ? `.page::before{content:'';position:absolute;inset:0;background-image:url('${watermark64}');background-size:70%;background-position:center;background-repeat:no-repeat;opacity:0.15;z-index:0;}`
     : '';
 
   const topicHTML = topic
@@ -365,14 +365,12 @@ body{font-family:'Times New Roman',Times,serif;background:white;}
   display:flex;flex-direction:column;align-items:center;
   overflow:hidden;
 }
-.ob{position:absolute;inset:8mm;border:2.5px solid #1e6b3e;z-index:1;}
-.ib{position:absolute;inset:11.5mm;border:0.6px solid #b8d4c0;z-index:1;}
 
 /* ── content ── */
 .govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:7px;position:relative;z-index:2;}
 .logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:7px;position:relative;z-index:2;}
 .cn{font-size:28px;font-weight:1000;color:#1a3480;text-align:center;
-    text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:Arial,sans-serif;position:relative;z-index:2;}
+    text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:'Arial Black',sans-serif;position:relative;z-index:2;}
 .loc{font-size:13px;color:#444;text-align:center;margin-bottom:9px;position:relative;z-index:2;}
 .ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:9px;position:relative;z-index:2;}
 .hr{width:65%;height:1px;background:linear-gradient(90deg,transparent,#1e6b3e,transparent);margin:6px auto;position:relative;z-index:2;}
@@ -400,7 +398,6 @@ ${watermarkCSS}
 @media print{@page{margin:0;size:A4;}body{margin:0;}}
 </style></head>
 <body><div class="page">
-<div class="ob"></div><div class="ib"></div>
 
 <p class="govt">Government of the People's Republic of Bangladesh</p>
 
@@ -454,8 +451,18 @@ ${dateHTML}
   const win = window.open('','_blank','width=920,height=760');
   win.document.write(html);
   win.document.close();
-  win.onload = () => setTimeout(() => { win.focus(); win.print(); }, 800);
-  showToast('✅ Cover page ready! Save as PDF to download.', 4000);
+  
+  // Set filename for PDF download: Subject Name_Subject Code.pdf
+  const filename = `${subject}_${code}.pdf`;
+  
+  win.onload = () => setTimeout(() => { 
+    win.focus(); 
+    win.print(); 
+    // Try to set filename (works in some browsers when printing to PDF)
+    if(win.document.title) win.document.title = filename;
+  }, 800);
+  
+  showToast('✅ Cover page ready! Save as PDF: ' + filename, 4000);
 }
 </script>
 </body>
