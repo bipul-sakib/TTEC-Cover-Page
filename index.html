@@ -123,6 +123,18 @@
   .btn-dl:hover { background: var(--green-dark); transform: translateY(-1px); }
   .btn-dl:disabled { background: #7aaa8e; cursor: not-allowed; transform: none; opacity: 0.8; }
 
+  .bangla-instruction {
+    margin-top: 15px;
+    font-size: 0.85rem;
+    color: var(--green-dark);
+    text-align: center;
+    background-color: var(--green-light);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--green-mid);
+    line-height: 1.4;
+  }
+
   .footer { margin-top: 18px; font-size: 0.76rem; color: var(--muted); text-align: center; font-family: 'Courier New', monospace; }
 
   .toast {
@@ -137,6 +149,43 @@
     max-width: 90%;
   }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ══════════ PRINT STYLES ══════════ */
+  @media screen {
+    #print-container { display: none; }
+  }
+
+  @media print {
+    /* Hide the entire website UI */
+    body > :not(#print-container) { display: none !important; }
+    
+    /* Reset body styles for clean printing */
+    html, body {
+      background: white !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Force background colors and watermark to print */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* Set the physical page size to A4 */
+    @page {
+      size: A4 portrait;
+      margin: 0; /* Remove default browser margins/headers/footers */
+    }
+
+    #print-container {
+      display: block !important;
+      width: 100%;
+      height: 100%;
+    }
+  }
 
   @media (max-width: 520px) {
     .field-row { grid-template-columns: 1fr; }
@@ -199,7 +248,7 @@
 
   <div class="field-row full">
     <div class="field">
-      <label>Experiment Name / Topic (Optional, Use incase of Individual Lab report and Assignment)</label>
+      <label>Experiment Name / Topic (Optional)</label>
       <input type="text" id="topic" placeholder="e.g. Plain Weave Structure Analysis">
     </div>
   </div>
@@ -237,11 +286,6 @@
           <option>2020-2021</option><option>2021-2022</option>
           <option>2022-2023</option><option>2023-2024</option>
           <option>2024-2025</option><option>2025-2026</option>
-          <option>2026-2027</option><option>2027-2028</option>
-          <option>2028-2029</option><option>2029-2030</option>
-          <option>2030-2031</option><option>2031-2032</option>
-          <option>2032-2033</option><option>2033-2034</option>
-          <option>2034-2035</option>
         </select>
       </div>
     </div>
@@ -249,7 +293,7 @@
 
   <div class="field-row full">
     <div class="field">
-      <label>Submission Date (Optional, Use incase of Individual Lab report and Assignment)</label>
+      <label>Submission Date (Optional)</label>
       <input type="date" id="submissionDate">
     </div>
   </div>
@@ -270,14 +314,18 @@
     </div>
   </div>
 
-  <button class="btn-dl" id="downloadBtn" onclick="downloadCover()">⬇ Download Cover Page</button>
+  <button class="btn-dl" id="downloadBtn" onclick="generateAndPrint()">🖨️ Save as PDF / Print</button>
+
+  <div class="bangla-instruction">
+    <strong>নির্দেশনা:</strong> 'Save as PDF / Print' বাটনে ক্লিক করার পর, প্রিন্ট মেনু থেকে <strong>'Save as PDF'</strong> সিলেক্ট করুন।
+  </div>
+
 </div>
 
 <div class="footer">Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<div id="print-container"></div>
 
 <script>
 function v(id){ return document.getElementById(id).value.trim(); }
@@ -290,30 +338,17 @@ function showToast(msg, dur=3500){
   toastTimer = setTimeout(() => t.classList.remove('show'), dur);
 }
 
-// FIX: Improved image loader that strictly rejects 0x0 images to prevent canvas crashes
-function getImgBase64(src) {
+// Function to preload images so they are ready for the print dialog
+function preloadImage(url) {
   return new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      // If image failed to load dimensions properly, abort to prevent createPattern error
-      if (!img.naturalWidth || !img.naturalHeight) {
-        return resolve(null);
-      }
-      try {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth;
-        c.height = img.naturalHeight;
-        c.getContext('2d').drawImage(img, 0, 0);
-        resolve(c.toDataURL('image/png'));
-      } catch(e) { resolve(null); }
-    };
+    img.onload = () => resolve(url);
     img.onerror = () => resolve(null);
-    img.src = src + '?t=' + Date.now(); // Cache bust
+    img.src = url;
   });
 }
 
-async function downloadCover(){
+async function generateAndPrint(){
   const req = [
     ['department','Department'],['reportType','Report Type'],
     ['subjectName','Subject Name'],['subjectCode','Subject Code'],
@@ -321,207 +356,138 @@ async function downloadCover(){
     ['studentName','Student Name'],['studentRoll','Roll Number'],
     ['teacherName','Teacher Name'],['teacherDesig','Designation'],
   ];
+  
   for(const [id,label] of req){
     if(!v(id)){ showToast('⚠ Please fill: '+label); document.getElementById(id).focus(); return; }
   }
 
   const btn = document.getElementById('downloadBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ Generating…';
+  btn.textContent = '⏳ Preparing PDF...';
 
-  const dept      = v('department'),
-        type      = v('reportType'),
-        subject   = v('subjectName'),
-        code      = v('subjectCode'),
-        topic     = v('topic'),
-        levelTerm = v('levelTerm'),
-        session   = v('session'),
-        sName     = v('studentName'),
-        sRoll     = v('studentRoll'),
-        dateRaw   = v('submissionDate'),
-        tName     = v('teacherName'),
-        tDesig    = v('teacherDesig');
+  // Extract values
+  const dept = v('department'), type = v('reportType'),
+        subject = v('subjectName'), code = v('subjectCode'),
+        topic = v('topic'), levelTerm = v('levelTerm'),
+        session = v('session'), sName = v('studentName'),
+        sRoll = v('studentRoll'), dateRaw = v('submissionDate'),
+        tName = v('teacherName'), tDesig = v('teacherDesig');
 
   const dateStr = dateRaw
     ? new Date(dateRaw).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})
     : '';
 
-  showToast('⏳ Loading images…', 10000);
+  // Preload images to ensure they appear in the print preview
+  await Promise.all([
+    preloadImage('images/bd-logo.png'),
+    preloadImage('images/ttec-logo.png'),
+    preloadImage('images/watermark.png')
+  ]);
 
-  const bdLogo64    = await getImgBase64('images/bd-logo.png');
-  const ttecLogo64  = await getImgBase64('images/ttec-logo.png');
-  const watermark64 = await getImgBase64('images/watermark.png');
+  const bdHTML = `<img src="images/bd-logo.png" style="height:58px;width:auto;object-fit:contain;display:block;">`;
+  const ttecHTML = `<img src="images/ttec-logo.png" style="height:115px;width:auto;object-fit:contain;display:block;">`;
+  
+  const watermarkHTML = `<img src="images/watermark.png" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:70%; height:auto; opacity:0.12; z-index:0; pointer-events:none;">`;
 
-  const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;display:block;">` : '';
-  const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:115px;width:auto;object-fit:contain;display:block;">` : '';
+  const topicHTML = topic ? `<p style="font-size:16px;font-weight:bold;color:#1e6b3e;text-align:center;margin-top:4px;position:relative;z-index:2;">Experiment/Topic: ${topic}</p>` : '';
+  const dateHTML = dateStr ? `<p style="font-size:15px;text-align:center;color:#555;margin-top:3px;position:relative;z-index:2;">Date of Submission: ${dateStr}</p>` : '';
 
-  // FIX: Instead of CSS background, we use an absolute positioned image to bypass the createPattern error
-  const watermarkHTML = watermark64
-    ? `<img src="${watermark64}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:70%; height:auto; opacity:0.15; z-index:0; pointer-events:none;">`
-    : '';
-
-  const topicHTML = topic
-    ? `<p style="font-size:16px;font-weight:bold;color:#1e6b3e;text-align:center;margin-top:4px;position:relative;z-index:2;">Experiment/Topic: ${topic}</p>`
-    : '';
-  const dateHTML = dateStr
-    ? `<p style="font-size:15px;text-align:center;color:#555;margin-top:3px;position:relative;z-index:2;">Date of Submission: ${dateStr}</p>`
-    : '';
-
+  // The CSS applied specifically to the printed page
   const coverCSS = `
-    *{box-sizing:border-box;margin:0;padding:0;}
-    html,body{width:100%;height:100%;}
-    #cover-page{
-      width:794px;height:1123px;
-      padding:28px 76px 28px;
-      background:white;
-      position:relative;
-      display:flex;flex-direction:column;align-items:center;
-      overflow:hidden !important; /* Keep it hidden so watermark stays inside */
-      font-family:'Times New Roman',Times,serif;
-    }
-    .logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:2px;position:relative;z-index:2;}
-    .govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:2px;position:relative;z-index:2;}
-    .cn{font-size:23px;font-weight:900;color:#1a3480;text-align:center;
-        text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;
-        font-family:Arial Black,Arial,sans-serif;position:relative;z-index:2;}
-    .loc{font-size:15.5px;color:#444;text-align:center;margin-bottom:3px;position:relative;z-index:2;}
-    .ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:3px;position:relative;z-index:2;}
-    .hr{width:65%;height:1px;background:linear-gradient(90deg,transparent,#1e6b3e,transparent);margin:3px auto;position:relative;z-index:2;}
-    .deg{font-size:21px;font-weight:bold;color:#1a6b8a;text-align:center;margin-bottom:1px;font-family:Arial,sans-serif;position:relative;z-index:2;}
-    .aff{font-size:15px;color:#444;text-align:center;position:relative;z-index:2;}
-    .uni{font-size:17.5px;font-weight:bold;color:#1a3480;text-align:center;margin-bottom:4px;font-family:Arial,sans-serif;position:relative;z-index:2;}
-    .badge{background:#1e6b3e;color:white;font-size:20px;font-weight:bold;
-           letter-spacing:0.1em;padding:6px 52px;display:inline-block;
-           font-family:Arial,sans-serif;margin:4px 0 6px;position:relative;z-index:2;}
-    .dept{font-size:23px;font-weight:bold;color:#8b0000;text-align:center;margin-bottom:2px;font-family:Arial,sans-serif;position:relative;z-index:2;}
-    .lvl{font-size:16.5px;color:#1a1a1a;text-align:center;line-height:1.75;margin-bottom:4px;position:relative;z-index:2;}
-    .sb{position:relative;z-index:2;}
-    .sb p{font-size:17.5px;font-weight:bold;line-height:1.85;text-align:center;}
-    .spacer{flex:1;min-height:110px;max-height:145px;}
-    table{width:100%;border-collapse:collapse;border:2px solid #000;position:relative;z-index:2;}
-    td{padding:9px 15px;vertical-align:top;border:1.5px solid #000;width:50%;font-size:16.5px;line-height:1.75;}
-    .ch{font-size:18px;font-weight:bold;text-align:center;
-        border-bottom:1.5px solid #000;padding-bottom:6px;margin-bottom:7px;display:block;}
+    <style>
+      #cover-page {
+        width: 100%;
+        height: 100vh; /* Fill the whole printed page height */
+        padding: 40px 76px;
+        box-sizing: border-box;
+        background: white;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Times New Roman', Times, serif;
+      }
+      .logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:2px;position:relative;z-index:2;}
+      .govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:2px;position:relative;z-index:2;}
+      .cn{font-size:23px;font-weight:900;color:#1a3480;text-align:center;text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:Arial Black,Arial,sans-serif;position:relative;z-index:2;}
+      .loc{font-size:15.5px;color:#444;text-align:center;margin-bottom:3px;position:relative;z-index:2;}
+      .ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:3px;position:relative;z-index:2;}
+      .hr{width:65%;height:1px;background:linear-gradient(90deg,transparent,#1e6b3e,transparent);margin:3px auto;position:relative;z-index:2;}
+      .deg{font-size:21px;font-weight:bold;color:#1a6b8a;text-align:center;margin-bottom:1px;font-family:Arial,sans-serif;position:relative;z-index:2;}
+      .aff{font-size:15px;color:#444;text-align:center;position:relative;z-index:2;}
+      .uni{font-size:17.5px;font-weight:bold;color:#1a3480;text-align:center;margin-bottom:4px;font-family:Arial,sans-serif;position:relative;z-index:2;}
+      .badge{background:#1e6b3e;color:white;font-size:20px;font-weight:bold;letter-spacing:0.1em;padding:6px 52px;display:inline-block;font-family:Arial,sans-serif;margin:4px 0 6px;position:relative;z-index:2; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+      .dept{font-size:23px;font-weight:bold;color:#8b0000;text-align:center;margin-bottom:2px;font-family:Arial,sans-serif;position:relative;z-index:2;}
+      .lvl{font-size:16.5px;color:#1a1a1a;text-align:center;line-height:1.75;margin-bottom:4px;position:relative;z-index:2;}
+      .sb{position:relative;z-index:2;}
+      .sb p{font-size:17.5px;font-weight:bold;line-height:1.85;text-align:center;margin:0;}
+      .spacer{flex:1;} /* Pushes the table to the bottom */
+      table{width:100%;border-collapse:collapse;border:2px solid #000;position:relative;z-index:2;}
+      td{padding:12px 15px;vertical-align:top;border:1.5px solid #000;width:50%;font-size:16.5px;line-height:1.75;}
+      .ch{font-size:18px;font-weight:bold;text-align:center;border-bottom:1.5px solid #000;padding-bottom:6px;margin-bottom:7px;display:block;}
+    </style>
   `;
 
   const coverHTML = `
-    ${watermarkHTML}
-    ${bdHTML   ? `<div class="logo-row">${bdHTML}</div>` : ''}
-    <p class="govt">Government of the People&#39;s Republic of Bangladesh</p>
-    <p class="cn">Tangail Textile Engineering College</p>
-    <p class="loc">Kalihati, Tangail</p>
-    ${ttecHTML ? `<div class="ttec-logo">${ttecHTML}</div>` : ''}
-    <div class="hr"></div>
-    <p class="deg">B.Sc. in Textile Engineering</p>
-    <p class="aff">Affiliated by</p>
-    <p class="uni">Bangladesh University of Textiles (BUTex)</p>
-    <div class="hr"></div>
-    <div><span class="badge">${type}</span></div>
-    <p class="dept">Department of ${dept}</p>
-    <p class="lvl">${levelTerm}<br>Session: ${session}</p>
-    <div class="sb">
-      <p>Subject Name: ${subject}</p>
-      <p>Subject Code: ${code}</p>
+    ${coverCSS}
+    <div id="cover-page">
+      ${watermarkHTML}
+      <div class="logo-row">${bdHTML}</div>
+      <p class="govt">Government of the People&#39;s Republic of Bangladesh</p>
+      <p class="cn">Tangail Textile Engineering College</p>
+      <p class="loc">Kalihati, Tangail</p>
+      <div class="ttec-logo">${ttecHTML}</div>
+      <div class="hr"></div>
+      <p class="deg">B.Sc. in Textile Engineering</p>
+      <p class="aff">Affiliated by</p>
+      <p class="uni">Bangladesh University of Textiles (BUTex)</p>
+      <div class="hr"></div>
+      <div><span class="badge">${type}</span></div>
+      <p class="dept">Department of ${dept}</p>
+      <p class="lvl">${levelTerm}<br>Session: ${session}</p>
+      <div class="sb">
+        <p>Subject Name: ${subject}</p>
+        <p>Subject Code: ${code}</p>
+      </div>
+      ${topicHTML}
+      ${dateHTML}
+      <div class="spacer"></div>
+      <table><tr>
+        <td>
+          <span class="ch">Submitted To</span>
+          <strong>${tName}</strong><br>
+          ${tDesig}<br>
+          Tangail Textile Engineering College<br>
+          Kalihati, Tangail
+        </td>
+        <td>
+          <span class="ch">Submitted By</span>
+          Name&nbsp;&nbsp;: ${sName}<br>
+          Roll&nbsp;&nbsp;&nbsp;&nbsp;: ${sRoll}<br>
+          Dept&nbsp;&nbsp;&nbsp;: ${dept}
+        </td>
+      </tr></table>
     </div>
-    ${topicHTML}
-    ${dateHTML}
-    <div class="spacer"></div>
-    <table><tr>
-      <td>
-        <span class="ch">Submitted To</span>
-        <strong>${tName}</strong><br>
-        ${tDesig}<br>
-        Tangail Textile Engineering College<br>
-        Kalihati, Tangail
-      </td>
-      <td>
-        <span class="ch">Submitted By</span>
-        Name&nbsp;&nbsp;: ${sName}<br>
-        Roll&nbsp;&nbsp;&nbsp;&nbsp;: ${sRoll}<br>
-        Dept&nbsp;&nbsp;&nbsp;: ${dept}
-      </td>
-    </tr></table>
   `;
 
-  const style = document.createElement('style');
-  style.textContent = coverCSS;
+  // Inject the layout into the DOM
+  document.getElementById('print-container').innerHTML = coverHTML;
 
-  const container = document.createElement('div');
-  container.id = 'cover-page';
-  container.innerHTML = coverHTML;
-
-  // Move off-screen safely
-  container.style.cssText = 'position:absolute;top:-9999px;left:-9999px;z-index:-1;pointer-events:none;';
-
-  document.head.appendChild(style);
-  document.body.appendChild(container);
-
-  // Wait for all images (including the new watermark tag) to load
-  await new Promise(resolve => {
-    const imgs = Array.from(container.querySelectorAll('img'));
-    if(imgs.length === 0) return resolve();
-    let loaded = 0;
-    imgs.forEach(img => {
-      if(img.complete && img.naturalWidth > 0) { loaded++; if(loaded===imgs.length) resolve(); return; }
-      img.onload = img.onerror = () => { loaded++; if(loaded===imgs.length) resolve(); };
-    });
-    setTimeout(resolve, 5000);
-  });
-
-  showToast('⏳ Rendering PDF…', 10000);
-  await new Promise(r => setTimeout(r, 200));
-
-  try {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const renderScale = isMobile ? 1.5 : 2;
-
-    const canvas = await html2canvas(container, {
-      scale: renderScale,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#ffffff',
-      width: 794,
-      height: 1123,
-      logging: false,
-      imageTimeout: 15000,
-      onclone: function(clonedDoc) {
-        const el = clonedDoc.getElementById('cover-page');
-        if (el) {
-          el.style.position = 'relative';
-          el.style.left = '0px';
-          el.style.top = '0px';
-        }
-      }
-    });
-
-    if (!canvas || canvas.width === 0 || canvas.height === 0) {
-      throw new Error('Canvas rendering failed');
-    }
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-    const quality = isMobile ? 0.80 : 0.95;
-    const imgData = canvas.toDataURL('image/jpeg', quality);
-
-    if (!imgData || imgData.length < 100) {
-      throw new Error('Failed to generate image data');
-    }
-
-    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-    const filename = `${subject}_${code}.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
-    pdf.save(filename);
-
-    showToast('✅ Downloaded: ' + filename, 4000);
-  } catch(err) {
-    console.error('PDF error:', err);
-    showToast('❌ ' + (err.message || 'Error generating PDF'), 5000);
-  } finally {
-    try { document.body.removeChild(container); } catch(e){}
-    try { document.head.removeChild(style); } catch(e){}
+  // Give the browser 1/2 a second to render the DOM before opening print dialog
+  setTimeout(() => {
+    // Setting the document title briefly changes the default saved PDF filename!
+    const originalTitle = document.title;
+    document.title = `${subject}_${code}_CoverPage`; 
+    
+    window.print(); // Opens the native print dialog
+    
+    document.title = originalTitle; // Revert the title
+    
+    // Reset the button
     btn.disabled = false;
-    btn.textContent = '⬇ Download Cover Page';
-  }
+    btn.textContent = '🖨️ Save as PDF / Print';
+    
+  }, 500);
 }
 </script>
 </body>
