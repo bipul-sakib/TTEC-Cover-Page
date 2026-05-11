@@ -46,7 +46,6 @@
     gap: 14px;
     margin-bottom: 7px;
   }
-  /* ttec-logo: 54px — set via inline or here */
   .top-bar .header-logos .logo-ttec { height: 54px; width: auto; object-fit: contain; }
   .top-bar h1 {
     font-family: 'Crimson Pro', serif;
@@ -122,6 +121,7 @@
     transition: background 0.15s, transform 0.12s;
   }
   .btn-dl:hover { background: var(--green-dark); transform: translateY(-1px); }
+  .btn-dl:disabled { background: #7aaa8e; cursor: not-allowed; transform: none; }
 
   .footer { margin-top: 18px; font-size: 0.76rem; color: var(--muted); text-align: center; font-family: 'Courier New', monospace; }
 
@@ -148,7 +148,6 @@
 <!-- ══════════ HEADER ══════════ -->
 <div class="top-bar">
   <div class="header-logos">
-    <!-- TTEC College Logo (54×54 px PNG, transparent bg) -->
     <img class="logo-ttec" src="images/ttec-logo.png" alt="TTEC Logo" onerror="this.style.display='none'">
   </div>
   <h1>Cover Page Generator</h1>
@@ -167,7 +166,7 @@
           <option>Apparel Engineering</option>
           <option>Wet Processing Engineering</option>
           <option>Fabric Engineering</option>
-           <option>Yarn Engineering</option>
+          <option>Yarn Engineering</option>
         </select>
       </div>
     </div>
@@ -242,8 +241,8 @@
           <option>2026-2027</option><option>2027-2028</option>
           <option>2028-2029</option><option>2029-2030</option>
           <option>2030-2031</option><option>2031-2032</option>
-          <option>2032-2032</option><option>2032-2033</option>
-          <option>2033-2034</option><option>2034-2035</option>
+          <option>2032-2033</option><option>2033-2034</option>
+          <option>2034-2035</option>
         </select>
       </div>
     </div>
@@ -251,7 +250,7 @@
 
   <div class="field-row full">
     <div class="field">
-      <label>Submission Date(Optional, Use incase of Individual Lab report and Assignment)</label>
+      <label>Submission Date (Optional, Use incase of Individual Lab report and Assignment)</label>
       <input type="date" id="submissionDate">
     </div>
   </div>
@@ -272,7 +271,7 @@
     </div>
   </div>
 
-  <button class="btn-dl" onclick="downloadCover()">⬇ Download Cover Page</button>
+  <button class="btn-dl" id="downloadBtn" onclick="downloadCover()">⬇ Download Cover Page</button>
 </div>
 
 <div class="footer">Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
@@ -286,24 +285,45 @@
 <script>
 function v(id){ return document.getElementById(id).value.trim(); }
 
+let toastTimer = null;
 function showToast(msg, dur=3500){
   const t = document.getElementById('toast');
+  if(toastTimer) clearTimeout(toastTimer);
   t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), dur);
+  toastTimer = setTimeout(() => t.classList.remove('show'), dur);
 }
 
+// Robust image loader: fetches as blob to avoid CORS/cache issues on mobile
 function getImgBase64(src) {
   return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const c = document.createElement('canvas');
-      c.width = img.naturalWidth; c.height = img.naturalHeight;
-      c.getContext('2d').drawImage(img, 0, 0);
-      resolve(c.toDataURL());
-    };
-    img.onerror = () => resolve(null);
-    img.src = src + '?t=' + Date.now();
+    // Try fetch-as-blob first (works better on mobile)
+    fetch(src + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(r => {
+        if (!r.ok) throw new Error('fetch failed');
+        return r.blob();
+      })
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      })
+      .catch(() => {
+        // Fallback: try Image element
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const c = document.createElement('canvas');
+            c.width = img.naturalWidth || 1;
+            c.height = img.naturalHeight || 1;
+            c.getContext('2d').drawImage(img, 0, 0);
+            resolve(c.toDataURL());
+          } catch(e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = src + '?t=' + Date.now();
+      });
   });
 }
 
@@ -318,6 +338,10 @@ async function downloadCover(){
   for(const [id,label] of req){
     if(!v(id)){ showToast('⚠ Please fill: '+label); document.getElementById(id).focus(); return; }
   }
+
+  const btn = document.getElementById('downloadBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
 
   const dept      = v('department'),
         type      = v('reportType'),
@@ -335,6 +359,8 @@ async function downloadCover(){
   const dateStr = dateRaw
     ? new Date(dateRaw).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})
     : '';
+
+  showToast('⏳ Loading images…', 10000);
 
   const bdLogo64    = await getImgBase64('images/bd-logo.png');
   const ttecLogo64  = await getImgBase64('images/ttec-logo.png');
@@ -354,7 +380,6 @@ async function downloadCover(){
     ? `<p style="font-size:15px;text-align:center;color:#555;margin-top:3px;position:relative;z-index:2;">Date of Submission: ${dateStr}</p>`
     : '';
 
-  // ── Build an off-screen A4 div at exactly 794×1123px (96dpi A4) ──
   const coverCSS = `
     *{box-sizing:border-box;margin:0;padding:0;}
     #cover-page{
@@ -430,7 +455,6 @@ async function downloadCover(){
     </tr></table>
   `;
 
-  // Create hidden container, inject style + content, render with html2canvas
   const style = document.createElement('style');
   style.textContent = coverCSS;
 
@@ -438,53 +462,73 @@ async function downloadCover(){
   container.id = 'cover-page';
   container.innerHTML = coverHTML;
 
-  // Position off-screen but still rendered
-  container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+  // FIX: Use visibility:hidden + position:absolute instead of left:-9999px
+  // Mobile browsers sometimes skip rendering of far off-screen elements
+  container.style.cssText = 'position:absolute;top:0;left:0;visibility:hidden;z-index:-1;pointer-events:none;';
+
   document.head.appendChild(style);
   document.body.appendChild(container);
 
-  showToast('⏳ Generating PDF…', 8000);
+  // Wait for all images inside the container to fully load
+  await new Promise(resolve => {
+    const imgs = Array.from(container.querySelectorAll('img'));
+    if(imgs.length === 0) return resolve();
+    let loaded = 0;
+    imgs.forEach(img => {
+      if(img.complete && img.naturalWidth > 0) { loaded++; if(loaded===imgs.length) resolve(); return; }
+      img.onload = img.onerror = () => { loaded++; if(loaded===imgs.length) resolve(); };
+    });
+    // Safety timeout: proceed after 5s even if images didn't load
+    setTimeout(resolve, 5000);
+  });
+
+  showToast('⏳ Rendering PDF…', 10000);
+
+  // Small delay to allow browser to finish layout (important on mobile)
+  await new Promise(r => setTimeout(r, 100));
 
   try {
-    // Wait for images inside container to load
-    const imgs = container.querySelectorAll('img');
-    await Promise.all(Array.from(imgs).map(img =>
-      img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
-    ));
-
-    // Detect if mobile to reduce scale
+    // FIX: Use scale:1.5 instead of 1 on mobile — scale:1 with large canvas can actually
+    // be MORE problematic due to sub-pixel issues; 1.5 is a good balance
+    // Also limit canvas max dimension to avoid mobile GPU memory crash
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const scale = isMobile ? 1 : 2;  // Use 1x on mobile, 2x on desktop
 
     const canvas = await html2canvas(container, {
-      scale: scale,
+      scale: isMobile ? 1.5 : 2,
       useCORS: true,
-      allowTaint: true,
+      allowTaint: false,        // FIX: false is safer on mobile (avoids taint errors)
       backgroundColor: '#ffffff',
       width: 794,
       height: 1123,
       windowWidth: 794,
       windowHeight: 1123,
       logging: false,
+      imageTimeout: 10000,      // FIX: give images more time to load on slow mobile networks
+      removeContainer: false,
     });
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    // A4 = 210×297mm — fill the entire page, no margins
+    // FIX: Use lower JPEG quality on mobile to reduce memory pressure
+    const quality = isMobile ? 0.85 : 0.95;
+    const imgData = canvas.toDataURL('image/jpeg', quality);
+
     pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
 
-    const filename = `${subject}_${code}.pdf`;
+    const filename = `${subject}_${code}.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
     pdf.save(filename);
 
     showToast('✅ Downloaded: ' + filename, 4000);
   } catch(err) {
-    showToast('❌ Error generating PDF. Try again.', 4000);
-    console.error(err);
+    console.error('PDF generation error:', err);
+    showToast('❌ Error: ' + (err.message || 'PDF generation failed. Please try again.'), 5000);
   } finally {
-    document.body.removeChild(container);
-    document.head.removeChild(style);
+    // Cleanup
+    try { document.body.removeChild(container); } catch(e){}
+    try { document.head.removeChild(style); } catch(e){}
+    btn.disabled = false;
+    btn.textContent = '⬇ Download Cover Page';
   }
 }
 </script>
