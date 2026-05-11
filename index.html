@@ -146,7 +146,6 @@
 </head>
 <body>
 
-<!-- ══════════ HEADER ══════════ -->
 <div class="top-bar">
   <div class="header-logos">
     <img class="logo-ttec" src="images/ttec-logo.png" alt="TTEC Logo" onerror="this.style.display='none'">
@@ -155,7 +154,6 @@
   <p>Tangail Textile Engineering College — Fill in the details below.</p>
 </div>
 
-<!-- ══════════ FORM CARD ══════════ -->
 <div class="card">
 
   <div class="field-row">
@@ -278,11 +276,9 @@
 <div class="footer">Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
 <div class="toast" id="toast"></div>
 
-<!-- ══════════ LIBRARIES ══════════ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<!-- ══════════ SCRIPT ══════════ -->
 <script>
 function v(id){ return document.getElementById(id).value.trim(); }
 
@@ -462,8 +458,8 @@ async function downloadCover(){
   container.id = 'cover-page';
   container.innerHTML = coverHTML;
 
-  // FIX: Put on-screen (but hidden) so browser actually renders it fully
-  container.style.cssText = 'position:fixed;top:-9999px;left:0;opacity:0;pointer-events:none;';
+  // FIX: Move absolutely off-screen instead of using opacity:0
+  container.style.cssText = 'position:absolute;top:-9999px;left:-9999px;z-index:-1;pointer-events:none;';
 
   document.head.appendChild(style);
   document.body.appendChild(container);
@@ -485,25 +481,28 @@ async function downloadCover(){
 
   try {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    // CRITICAL FIX: Use smaller dimensions for mobile to avoid canvas size issues
-    let renderScale = isMobile ? 1.2 : 2;
-    let renderWidth = isMobile ? 600 : 794;
-    let renderHeight = isMobile ? 850 : 1123;
+    
+    // FIX: Optimized html2canvas settings ensuring full width/height rendering
+    const renderScale = isMobile ? 1.5 : 2;
 
     const canvas = await html2canvas(container, {
       scale: renderScale,
       useCORS: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
-      width: renderWidth,
-      height: renderHeight,
-      windowWidth: renderWidth,
-      windowHeight: renderHeight,
+      width: 794,  // Set exact A4 proportions 
+      height: 1123, // Set exact A4 proportions
       logging: false,
       imageTimeout: 15000,
-      removeContainer: false,
-      foreignObjectRendering: false,  // Disable foreign object rendering (can cause issues on mobile)
+      onclone: function(clonedDoc) {
+        // Temporarily reset position in the cloned doc for perfect capture
+        const el = clonedDoc.getElementById('cover-page');
+        if (el) {
+          el.style.position = 'relative';
+          el.style.left = '0px';
+          el.style.top = '0px';
+        }
+      }
     });
 
     // Check canvas is valid before converting
@@ -514,7 +513,7 @@ async function downloadCover(){
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-    // Use lower quality on mobile to reduce memory
+    // Use lower quality on mobile to reduce memory footprint
     const quality = isMobile ? 0.80 : 0.95;
     const imgData = canvas.toDataURL('image/jpeg', quality);
 
