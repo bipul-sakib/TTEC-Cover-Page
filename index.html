@@ -18,14 +18,45 @@
     --bg: #f0f7f2;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  
   body {
     font-family: 'Hind Siliguri', sans-serif;
-    background: var(--bg);
+    /* Removed solid background here so the image shows through */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding-bottom: 48px;
+    position: relative;
+  }
+
+  /* ── BACKGROUND IMAGE W/ BLUR ── */
+  body::before {
+    content: "";
+    position: fixed;
+    /* Expanding slightly beyond 100% to prevent blurry white edges */
+    top: -5%;
+    left: -5%;
+    width: 110vw;
+    height: 110vh;
+    background-image: url('images/TTTE_MAIN_GATE.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(8px); /* Adjust this value to increase/decrease blur */
+    z-index: -2;
+  }
+
+  /* ── SUBTLE OVERLAY TO MAKE THE FORM POP ── */
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(240, 247, 242, 0.7); /* Subtle tint using your var(--bg) color */
+    z-index: -1;
   }
 
   /* ── HEADER ── */
@@ -39,6 +70,7 @@
     align-items: center;
     gap: 4px;
     margin-bottom: 28px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Added slight shadow to separate from background */
   }
   .top-bar .header-logos {
     display: flex;
@@ -59,7 +91,7 @@
   .card {
     background: white;
     border-radius: 14px;
-    box-shadow: 0 2px 20px rgba(20,80,40,0.10);
+    box-shadow: 0 8px 30px rgba(20,80,40,0.15); /* Slightly boosted shadow for depth */
     width: 100%;
     max-width: 500px;
     padding: 26px 24px 22px;
@@ -327,8 +359,8 @@
 </div>
 
 <div class="footer">
-  <div class="inspiration">Design inspiration: Al-Amin Bhai | TTEC, YE-13th</div>
-  <div>Developed by SAKIB HASAN BIPUL | TTEC, AE-14th</div>
+  <div class="inspiration">Design inspiration: Al-Amin Bhai | YE, TTEC 13th</div>
+  <div>Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
 </div>
 
 <div class="toast" id="toast"></div>
