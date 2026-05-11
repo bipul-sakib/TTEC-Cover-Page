@@ -290,35 +290,26 @@ function showToast(msg, dur=3500){
   toastTimer = setTimeout(() => t.classList.remove('show'), dur);
 }
 
-// Better image loader: use fetch with fallback
+// FIX: Improved image loader that strictly rejects 0x0 images to prevent canvas crashes
 function getImgBase64(src) {
   return new Promise((resolve) => {
-    fetch(src + '?t=' + Date.now(), { cache: 'no-store' })
-      .then(r => {
-        if (!r.ok) throw new Error('fetch failed');
-        return r.blob();
-      })
-      .then(blob => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(blob);
-      })
-      .catch(() => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          try {
-            const c = document.createElement('canvas');
-            c.width = img.naturalWidth || 1;
-            c.height = img.naturalHeight || 1;
-            c.getContext('2d').drawImage(img, 0, 0);
-            resolve(c.toDataURL());
-          } catch(e) { resolve(null); }
-        };
-        img.onerror = () => resolve(null);
-        img.src = src + '?t=' + Date.now();
-      });
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      // If image failed to load dimensions properly, abort to prevent createPattern error
+      if (!img.naturalWidth || !img.naturalHeight) {
+        return resolve(null);
+      }
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        resolve(c.toDataURL('image/png'));
+      } catch(e) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src + '?t=' + Date.now(); // Cache bust
   });
 }
 
@@ -364,8 +355,9 @@ async function downloadCover(){
   const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;display:block;">` : '';
   const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:115px;width:auto;object-fit:contain;display:block;">` : '';
 
-  const watermarkCSS = watermark64
-    ? `#cover-page::before{content:'';position:absolute;inset:0;background-image:url('${watermark64}');background-size:70%;background-position:center;background-repeat:no-repeat;opacity:0.15;z-index:0;}`
+  // FIX: Instead of CSS background, we use an absolute positioned image to bypass the createPattern error
+  const watermarkHTML = watermark64
+    ? `<img src="${watermark64}" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:70%; height:auto; opacity:0.15; z-index:0; pointer-events:none;">`
     : '';
 
   const topicHTML = topic
@@ -384,10 +376,9 @@ async function downloadCover(){
       background:white;
       position:relative;
       display:flex;flex-direction:column;align-items:center;
-      overflow:visible !important;
+      overflow:hidden !important; /* Keep it hidden so watermark stays inside */
       font-family:'Times New Roman',Times,serif;
     }
-    ${watermarkCSS}
     .logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:2px;position:relative;z-index:2;}
     .govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:2px;position:relative;z-index:2;}
     .cn{font-size:23px;font-weight:900;color:#1a3480;text-align:center;
@@ -414,6 +405,7 @@ async function downloadCover(){
   `;
 
   const coverHTML = `
+    ${watermarkHTML}
     ${bdHTML   ? `<div class="logo-row">${bdHTML}</div>` : ''}
     <p class="govt">Government of the People&#39;s Republic of Bangladesh</p>
     <p class="cn">Tangail Textile Engineering College</p>
@@ -458,13 +450,13 @@ async function downloadCover(){
   container.id = 'cover-page';
   container.innerHTML = coverHTML;
 
-  // FIX: Move absolutely off-screen instead of using opacity:0
+  // Move off-screen safely
   container.style.cssText = 'position:absolute;top:-9999px;left:-9999px;z-index:-1;pointer-events:none;';
 
   document.head.appendChild(style);
   document.body.appendChild(container);
 
-  // Wait for images to load
+  // Wait for all images (including the new watermark tag) to load
   await new Promise(resolve => {
     const imgs = Array.from(container.querySelectorAll('img'));
     if(imgs.length === 0) return resolve();
@@ -481,8 +473,6 @@ async function downloadCover(){
 
   try {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // FIX: Optimized html2canvas settings ensuring full width/height rendering
     const renderScale = isMobile ? 1.5 : 2;
 
     const canvas = await html2canvas(container, {
@@ -490,12 +480,11 @@ async function downloadCover(){
       useCORS: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
-      width: 794,  // Set exact A4 proportions 
-      height: 1123, // Set exact A4 proportions
+      width: 794,
+      height: 1123,
       logging: false,
       imageTimeout: 15000,
       onclone: function(clonedDoc) {
-        // Temporarily reset position in the cloned doc for perfect capture
         const el = clonedDoc.getElementById('cover-page');
         if (el) {
           el.style.position = 'relative';
@@ -505,15 +494,13 @@ async function downloadCover(){
       }
     });
 
-    // Check canvas is valid before converting
     if (!canvas || canvas.width === 0 || canvas.height === 0) {
-      throw new Error('Canvas rendering failed - invalid dimensions');
+      throw new Error('Canvas rendering failed');
     }
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-    // Use lower quality on mobile to reduce memory footprint
     const quality = isMobile ? 0.80 : 0.95;
     const imgData = canvas.toDataURL('image/jpeg', quality);
 
@@ -522,14 +509,13 @@ async function downloadCover(){
     }
 
     pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-
     const filename = `${subject}_${code}.pdf`.replace(/[/\\?%*:|"<>]/g, '-');
     pdf.save(filename);
 
     showToast('✅ Downloaded: ' + filename, 4000);
   } catch(err) {
-    console.error('PDF generation error:', err);
-    showToast('❌ ' + (err.message || 'PDF generation failed. Try again.'), 5000);
+    console.error('PDF error:', err);
+    showToast('❌ ' + (err.message || 'Error generating PDF'), 5000);
   } finally {
     try { document.body.removeChild(container); } catch(e){}
     try { document.head.removeChild(style); } catch(e){}
