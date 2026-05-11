@@ -159,31 +159,34 @@
     /* Hide the entire website UI */
     body > :not(#print-container) { display: none !important; }
     
-    /* Reset body styles for clean printing */
+    /* Strict A4 sizing for the body to prevent extra pages */
     html, body {
       background: white !important;
       margin: 0 !important;
       padding: 0 !important;
-      width: 100%;
-      height: 100%;
+      width: 210mm !important;
+      height: 297mm !important;
+      max-height: 297mm !important;
+      overflow: hidden !important; 
     }
 
-    /* Force background colors and watermark to print */
     * {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
 
-    /* Set the physical page size to A4 */
+    /* Set the physical page size to A4 with zero margins */
     @page {
       size: A4 portrait;
-      margin: 0; /* Remove default browser margins/headers/footers */
+      margin: 0mm; 
     }
 
     #print-container {
       display: block !important;
       width: 100%;
       height: 100%;
+      margin: 0;
+      padding: 0;
     }
   }
 
@@ -396,8 +399,9 @@ async function generateAndPrint(){
   const coverCSS = `
     <style>
       #cover-page {
-        width: 100%;
-        height: 100vh; /* Fill the whole printed page height */
+        width: 210mm;
+        height: 296mm; /* Slightly under 297mm to guarantee no spillover */
+        max-height: 296mm;
         padding: 40px 76px;
         box-sizing: border-box;
         background: white;
@@ -406,6 +410,9 @@ async function generateAndPrint(){
         flex-direction: column;
         align-items: center;
         font-family: 'Times New Roman', Times, serif;
+        overflow: hidden; /* Clips anything trying to push to page 2 */
+        page-break-after: avoid;
+        page-break-inside: avoid;
       }
       .logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:2px;position:relative;z-index:2;}
       .govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:2px;position:relative;z-index:2;}
@@ -421,8 +428,11 @@ async function generateAndPrint(){
       .lvl{font-size:16.5px;color:#1a1a1a;text-align:center;line-height:1.75;margin-bottom:4px;position:relative;z-index:2;}
       .sb{position:relative;z-index:2;}
       .sb p{font-size:17.5px;font-weight:bold;line-height:1.85;text-align:center;margin:0;}
-      .spacer{flex:1;} /* Pushes the table to the bottom */
-      table{width:100%;border-collapse:collapse;border:2px solid #000;position:relative;z-index:2;}
+      .spacer{flex:1;} /* Pushes the table down */
+      
+      /* ADDED MARGIN-BOTTOM HERE TO MOVE TABLE UP 5 LINES */
+      table{width:100%;border-collapse:collapse;border:2px solid #000;position:relative;z-index:2; margin-bottom: 120px;}
+      
       td{padding:12px 15px;vertical-align:top;border:1.5px solid #000;width:50%;font-size:16.5px;line-height:1.75;}
       .ch{font-size:18px;font-weight:bold;text-align:center;border-bottom:1.5px solid #000;padding-bottom:6px;margin-bottom:7px;display:block;}
     </style>
