@@ -293,37 +293,30 @@ function showToast(msg, dur=3500){
   toastTimer = setTimeout(() => t.classList.remove('show'), dur);
 }
 
-// Robust image loader: fetches as blob to avoid CORS/cache issues on mobile
+// Robust image loader with better error handling
 function getImgBase64(src) {
   return new Promise((resolve) => {
-    // Try fetch-as-blob first (works better on mobile)
-    fetch(src + '?t=' + Date.now(), { cache: 'no-store' })
-      .then(r => {
-        if (!r.ok) throw new Error('fetch failed');
-        return r.blob();
-      })
-      .then(blob => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(blob);
-      })
-      .catch(() => {
-        // Fallback: try Image element
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          try {
-            const c = document.createElement('canvas');
-            c.width = img.naturalWidth || 1;
-            c.height = img.naturalHeight || 1;
-            c.getContext('2d').drawImage(img, 0, 0);
-            resolve(c.toDataURL());
-          } catch(e) { resolve(null); }
-        };
-        img.onerror = () => resolve(null);
-        img.src = src + '?t=' + Date.now();
-      });
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || 1;
+        canvas.height = img.naturalHeight || 1;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch(e) {
+        console.warn('Canvas error for', src, e);
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      console.warn('Image load error:', src);
+      resolve(null);
+    };
+    // Add cache buster
+    img.src = src + '?t=' + Date.now();
   });
 }
 
@@ -366,11 +359,11 @@ async function downloadCover(){
   const ttecLogo64  = await getImgBase64('images/ttec-logo.png');
   const watermark64 = await getImgBase64('images/watermark.png');
 
-  const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;display:block;">` : '';
+  const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}" style="height:58px;width:auto;object-fit:contain;display:block;">` : '';
   const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:115px;width:auto;object-fit:contain;display:block;">` : '';
 
   const watermarkCSS = watermark64
-    ? `#cover-page::before{content:'';position:absolute;inset:0;background-image:url('${watermark64}');background-size:70%;background-position:center;background-repeat:no-repeat;opacity:0.15;z-index:0;}`
+    ? `#cover-page::before{content:'';position:absolute;inset:0;background-image:url('${watermark64}');background-size:70%;background-position:center;background-repeat:no-repeat;opacity:0.15;z-index:0;pointer-events:none;}`
     : '';
 
   const topicHTML = topic
@@ -462,57 +455,49 @@ async function downloadCover(){
   container.id = 'cover-page';
   container.innerHTML = coverHTML;
 
-  // FIX: Use visibility:hidden + position:absolute instead of left:-9999px
-  // Mobile browsers sometimes skip rendering of far off-screen elements
-  container.style.cssText = 'position:absolute;top:0;left:0;visibility:hidden;z-index:-1;pointer-events:none;';
+  // CRITICAL FIX: Position on-screen (but off-viewport) so html2canvas can properly render
+  // Using position:fixed with extreme off-screen coordinates ensures rendering
+  container.style.cssText = 'position:fixed;top:-10000px;left:0;z-index:-1;pointer-events:none;';
 
   document.head.appendChild(style);
   document.body.appendChild(container);
 
-  // Wait for all images inside the container to fully load
-  await new Promise(resolve => {
-    const imgs = Array.from(container.querySelectorAll('img'));
-    if(imgs.length === 0) return resolve();
-    let loaded = 0;
-    imgs.forEach(img => {
-      if(img.complete && img.naturalWidth > 0) { loaded++; if(loaded===imgs.length) resolve(); return; }
-      img.onload = img.onerror = () => { loaded++; if(loaded===imgs.length) resolve(); };
-    });
-    // Safety timeout: proceed after 5s even if images didn't load
-    setTimeout(resolve, 5000);
-  });
+  // Wait a tick for reflow
+  await new Promise(r => setTimeout(r, 50));
 
   showToast('⏳ Rendering PDF…', 10000);
 
-  // Small delay to allow browser to finish layout (important on mobile)
-  await new Promise(r => setTimeout(r, 100));
-
   try {
-    // FIX: Use scale:1.5 instead of 1 on mobile — scale:1 with large canvas can actually
-    // be MORE problematic due to sub-pixel issues; 1.5 is a good balance
-    // Also limit canvas max dimension to avoid mobile GPU memory crash
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
+    
     const canvas = await html2canvas(container, {
-      scale: isMobile ? 1.5 : 2,
+      scale: isMobile ? 1 : 2,
       useCORS: true,
-      allowTaint: false,        // FIX: false is safer on mobile (avoids taint errors)
+      allowTaint: true,
       backgroundColor: '#ffffff',
       width: 794,
       height: 1123,
       windowWidth: 794,
       windowHeight: 1123,
       logging: false,
-      imageTimeout: 10000,      // FIX: give images more time to load on slow mobile networks
-      removeContainer: false,
+      imageTimeout: 5000,
     });
+
+    // Verify canvas has actual content
+    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+      throw new Error('Canvas rendering produced empty result');
+    }
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-    // FIX: Use lower JPEG quality on mobile to reduce memory pressure
-    const quality = isMobile ? 0.85 : 0.95;
+    const quality = isMobile ? 0.9 : 0.95;
     const imgData = canvas.toDataURL('image/jpeg', quality);
+
+    // Verify image data is valid
+    if (!imgData || imgData.length < 100) {
+      throw new Error('Image conversion failed');
+    }
 
     pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
 
@@ -522,9 +507,8 @@ async function downloadCover(){
     showToast('✅ Downloaded: ' + filename, 4000);
   } catch(err) {
     console.error('PDF generation error:', err);
-    showToast('❌ Error: ' + (err.message || 'PDF generation failed. Please try again.'), 5000);
+    showToast('❌ Error: ' + (err.message || 'Failed. Please try again.'), 5000);
   } finally {
-    // Cleanup
     try { document.body.removeChild(container); } catch(e){}
     try { document.head.removeChild(style); } catch(e){}
     btn.disabled = false;
