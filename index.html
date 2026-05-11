@@ -37,7 +37,7 @@
     left: -5%;
     width: 110vw;
     height: 110vh;
-    background-image: url('images/TTTE_MAIN_GATE.png');
+    background-image: url('images/TTEC_MAIN_GATE.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -447,6 +447,12 @@ function showToast(msg, dur=3500){
   toastTimer = setTimeout(() => t.classList.remove('show'), dur);
 }
 
+// Check if user is inside an in-app browser (Messenger, Facebook, etc.)
+function isInAppBrowser() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1) || (ua.indexOf("Messenger") > -1);
+}
+
 // Function to preload images so they are ready for the print dialog
 function preloadImage(url) {
   return new Promise((resolve) => {
@@ -458,6 +464,13 @@ function preloadImage(url) {
 }
 
 async function generateAndPrint(){
+  
+  // If the user is on Messenger or Facebook browser, window.print() will fail. Give them a warning!
+  if (isInAppBrowser()) {
+    alert("⚠️ সতর্কতা: আপনি মেসেঞ্জার বা ফেসবুক ব্রাউজার ব্যবহার করছেন, তাই PDF সেভ করা যাচ্ছে না। \n\nদয়া করে লিংকটি কপি করে Google Chrome বা Safari ব্রাউজারে ওপেন করুন।");
+    return;
+  }
+
   const req = [
     ['department','Department'],['reportType','Report Type'],
     ['subjectName','Subject Name'],['subjectCode','Subject Code'],
@@ -546,7 +559,26 @@ async function generateAndPrint(){
   // Inject the HTML
   document.getElementById('print-container').innerHTML = coverHTML;
 
-  // Give the browser 1/2 a second to register the DOM changes
+  // Give the browser slightly more time to register the DOM changes
   setTimeout(() => {
     const originalTitle = document.title;
-    document.title =
+    document.title = `${subject}_${code}_CoverPage`; 
+    
+    // Call Native Print
+    try {
+      window.print(); 
+    } catch(err) {
+      showToast("❌ Print failed. Please use Chrome/Safari.", 4000);
+    }
+    
+    document.title = originalTitle; // Revert the title
+    
+    // Reset the button
+    btn.disabled = false;
+    btn.textContent = '🖨️ Save as PDF / Print';
+    
+  }, 800);
+}
+</script>
+</body>
+</html>
