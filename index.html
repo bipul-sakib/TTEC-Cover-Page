@@ -344,7 +344,7 @@ async function downloadCover(){
   const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:115px;width:auto;object-fit:contain;display:block;">` : '';
 
   const watermarkCSS = watermark64
-    ? `#cover-page::before{content:'';position:absolute;inset:0;background-image:url('${watermark64}');background-size:70%;background-position:center;background-repeat:no-repeat;opacity:0.15;z-index:0;pointer-events:none;}`
+    ? `#cover-page::before{content:'';position:absolute;inset:0;background-image:url('${watermark64}');background-size:70%;background-position:center;background-repeat:no-repeat;opacity:0.15;z-index:0;}`
     : '';
 
   const topicHTML = topic
@@ -452,8 +452,12 @@ async function downloadCover(){
       img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
     ));
 
+    // Detect if mobile to reduce scale
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const scale = isMobile ? 1 : 2;  // Use 1x on mobile, 2x on desktop
+
     const canvas = await html2canvas(container, {
-      scale: 2,           // high-res (2× = 150dpi equivalent)
+      scale: scale,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
@@ -461,12 +465,13 @@ async function downloadCover(){
       height: 1123,
       windowWidth: 794,
       windowHeight: 1123,
+      logging: false,
     });
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
     // A4 = 210×297mm — fill the entire page, no margins
     pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
 
