@@ -215,7 +215,6 @@
       height: 100%;
       margin: 0;
       padding: 0;
-      font-family: 'Times New Roman', Times, serif; 
     }
   }
 
@@ -225,7 +224,6 @@
     width: 210mm;
     height: 296mm;
     max-height: 296mm;
-    /* FIX: Bottom padding increased to 120px to push the table up safely */
     padding: 40px 76px 120px 76px; 
     box-sizing: border-box;
     background: white;
@@ -236,14 +234,21 @@
     overflow: hidden;
     page-break-after: avoid;
     page-break-inside: avoid;
+    font-family: 'Times New Roman', Times, serif !important; /* STRICTLY LOCKED */
+    color: #000;
   }
   
+  #cover-page * {
+    font-family: 'Times New Roman', Times, serif !important; /* Forces all children to inherit Times New Roman by default */
+  }
+
   #cover-page .logo-row { display:flex; align-items:center; justify-content:center; margin-bottom:2px; position:relative; z-index:2; }
   #cover-page .govt { font-size:13px; font-weight:bold; text-align:center; margin-bottom:2px; position:relative; z-index:2; }
   
   #cover-page .cn { 
     font-size:23px; font-weight:900; color:#1a3480; text-align:center; text-transform:uppercase; 
-    letter-spacing:0.02em; margin-bottom:2px; font-family:'Arial Black', Arial, sans-serif; 
+    letter-spacing:0.02em; margin-bottom:2px; 
+    font-family: 'Arial Black', Arial, sans-serif !important; /* STRICTLY LOCKED */
     position:relative; z-index:2; 
   }
   
@@ -251,15 +256,15 @@
   #cover-page .ttec-logo { display:flex; align-items:center; justify-content:center; margin-bottom:3px; position:relative; z-index:2; }
   #cover-page .hr { width:65%; height:1px; background:linear-gradient(90deg,transparent,#1e6b3e,transparent); margin:3px auto; position:relative; z-index:2; }
   
-  #cover-page .deg { font-size:21px; font-weight:bold; color:#1a6b8a; text-align:center; margin-bottom:1px; font-family:Arial, sans-serif; position:relative; z-index:2; }
+  #cover-page .deg { font-size:21px; font-weight:bold; color:#1a6b8a; text-align:center; margin-bottom:1px; font-family: Arial, sans-serif !important; position:relative; z-index:2; }
   #cover-page .aff { font-size:15px; color:#444; text-align:center; position:relative; z-index:2; }
-  #cover-page .uni { font-size:17.5px; font-weight:bold; color:#1a3480; text-align:center; margin-bottom:4px; font-family:Arial, sans-serif; position:relative; z-index:2; }
+  #cover-page .uni { font-size:17.5px; font-weight:bold; color:#1a3480; text-align:center; margin-bottom:4px; font-family: Arial, sans-serif !important; position:relative; z-index:2; }
   #cover-page .badge { 
     background:#1e6b3e; color:white; font-size:20px; font-weight:bold; letter-spacing:0.1em; 
-    padding:6px 52px; display:inline-block; font-family:Arial, sans-serif; margin:4px 0 6px; 
+    padding:6px 52px; display:inline-block; font-family: Arial, sans-serif !important; margin:4px 0 6px; 
     position:relative; z-index:2; -webkit-print-color-adjust:exact; print-color-adjust:exact; 
   }
-  #cover-page .dept { font-size:23px; font-weight:bold; color:#8b0000; text-align:center; margin-bottom:6px; font-family:Arial, sans-serif; position:relative; z-index:2; }
+  #cover-page .dept { font-size:23px; font-weight:bold; color:#8b0000; text-align:center; margin-bottom:6px; font-family: Arial, sans-serif !important; position:relative; z-index:2; }
   
   #cover-page .lvl { font-size:18.5px; color:#1a1a1a; text-align:center; line-height:1.4; margin:0 0 8px 0; position:relative; z-index:2; }
   #cover-page .sb { position:relative; z-index:2; margin-bottom:8px; }
@@ -269,7 +274,6 @@
   
   #cover-page .spacer { flex:1; } 
   
-  /* FIX: margin-bottom removed to prevent page overflow */
   #cover-page table { width:100%; border-collapse:collapse; border:2px solid #000; position:relative; z-index:2; }
   #cover-page td { padding:12px 15px; vertical-align:top; border:1.5px solid #000; width:50%; font-size:16.5px; line-height:1.75; }
   #cover-page .ch { font-size:18px; font-weight:bold; text-align:center; border-bottom:1.5px solid #000; padding-bottom:6px; margin-bottom:7px; display:block; }
@@ -410,7 +414,7 @@
 </div>
 
 <div class="footer">
-  <div class="inspiration">Design inspiration: Al-Amin Bhai | YE, TTEC 13th</div>
+  <div class="inspiration">Design inspiration: Al-Amin Bhai | TTEC, YE-13th</div>
   <div>Developed by Sakib Hasan Bipul | TTEC, AE-14th</div>
 </div>
 
