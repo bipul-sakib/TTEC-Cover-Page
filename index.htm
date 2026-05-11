@@ -123,7 +123,7 @@
   }
   .btn-dl:hover { background: var(--green-dark); transform: translateY(-1px); }
 
-  .footer { margin-top: 18px; font-size: 0.76rem; color: var(--muted); text-align: center; }
+  .footer { margin-top: 18px; font-size: 0.76rem; color: var(--muted); text-align: center; font-family: 'Courier New', monospace; }
 
   .toast {
     position: fixed; bottom: 24px; left: 50%;
@@ -338,7 +338,7 @@ async function downloadCover(){
 
   // Logos HTML — sizes exactly matching original cover page
   const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;">` : '';
-  const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:80px;width:auto;object-fit:contain;">` : '';
+  const ttecHTML = ttecLogo64 ? `<img src="${ttecLogo64}" style="height:120px;width:auto;object-fit:contain;">` : '';
 
   const topicHTML = topic
     ? `<p style="font-size:14px;font-weight:bold;color:#1e6b3e;text-align:center;margin-top:5px;">Experiment/Topic: ${topic}</p>`
@@ -366,7 +366,7 @@ body{font-family:'Times New Roman',Times,serif;background:white;}
 /* ── content ── */
 .govt{font-size:13px;font-weight:bold;text-align:center;margin-bottom:7px;}
 .logo-row{display:flex;align-items:center;justify-content:center;margin-bottom:7px;}
-.cn{font-size:25px;font-weight:900;color:#1a3480;text-align:center;
+.cn{font-size:28px;font-weight:1000;color:#1a3480;text-align:center;
     text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px;font-family:Arial,sans-serif;}
 .loc{font-size:13px;color:#444;text-align:center;margin-bottom:9px;}
 .ttec-logo{display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
@@ -380,6 +380,7 @@ body{font-family:'Times New Roman',Times,serif;background:white;}
 .dept{font-size:21px;font-weight:bold;color:#8b0000;text-align:center;margin-bottom:4px;font-family:Arial,sans-serif;}
 .lvl{font-size:14px;color:#1a1a1a;text-align:center;line-height:1.9;margin-bottom:9px;}
 .sb p{font-size:15px;font-weight:bold;line-height:2;text-align:center;}
+.dev-info{font-family:'Courier New',monospace;font-size:11px;color:#666;text-align:center;margin-top:8px;}
 
 /* table always ~70mm from bottom */
 .spacer{flex:1;min-height:8px;max-height:25mm;}
