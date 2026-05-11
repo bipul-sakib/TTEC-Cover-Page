@@ -156,7 +156,7 @@
 <div class="top-bar">
   <div class="header-logos">
     <!-- TTEC College Logo (54×54 px PNG, transparent bg) -->
-    <img class="logo-ttec" src="images/ttec-logo.png" alt="TTEC Logo" onerror="this.style.display='none'">
+    <img class="logo-ttec" src="https://raw.githubusercontent.com/bipul-sakib/TTEC-Cover-Page/main/images/ttec-logo.png" alt="TTEC Logo" onerror="this.style.display='none'">
   </div>
   <h1>Cover Page Generator</h1>
   <p>Tangail Textile Engineering College — Fill in the details below.</p>
@@ -303,12 +303,22 @@ function getImgBase64(src) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const c = document.createElement('canvas');
-      c.width = img.naturalWidth; c.height = img.naturalHeight;
-      c.getContext('2d').drawImage(img, 0, 0);
-      resolve(c.toDataURL());
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; 
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(c.toDataURL('image/png'));
+      } catch(e) {
+        console.warn('Canvas error for ' + src, e);
+        resolve(null);
+      }
     };
-    img.onerror = () => resolve(null);
+    img.onerror = () => {
+      console.warn('Failed to load image: ' + src);
+      resolve(null);
+    };
     img.src = src + '?t=' + Date.now();
   });
 }
@@ -324,6 +334,8 @@ async function downloadCover(){
   for(const [id,label] of req){
     if(!v(id)){ showToast('⚠ Please fill: '+label); document.getElementById(id).focus(); return; }
   }
+
+  showToast('⏳ Generating PDF...', 8000);
 
   const dept      = v('department'),
         type      = v('reportType'),
@@ -342,9 +354,9 @@ async function downloadCover(){
     ? new Date(dateRaw).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})
     : '';
 
-  const bdLogo64      = await getImgBase64('images/bd-logo.png');
-  const ttecLogo64    = await getImgBase64('images/ttec-logo.png');
-  const watermark64   = await getImgBase64('images/watermark.png');
+  const bdLogo64      = await getImgBase64('https://raw.githubusercontent.com/bipul-sakib/TTEC-Cover-Page/main/images/bd-logo.png');
+  const ttecLogo64    = await getImgBase64('https://raw.githubusercontent.com/bipul-sakib/TTEC-Cover-Page/main/images/ttec-logo.png');
+  const watermark64   = await getImgBase64('https://raw.githubusercontent.com/bipul-sakib/TTEC-Cover-Page/main/images/watermark.png');
 
   // Logos HTML — sizes exactly matching original cover page
   const bdHTML   = bdLogo64   ? `<img src="${bdLogo64}"   style="height:58px;width:auto;object-fit:contain;">` : '';
@@ -463,6 +475,11 @@ ${dateHTML}
   container.innerHTML = html;
   const element = container.querySelector('.page');
 
+  if (!element) {
+    showToast('❌ Error: Could not generate PDF template', 3500);
+    return;
+  }
+
   // Generate PDF filename
   const filename = `${subject}_${code}.pdf`;
 
@@ -471,7 +488,7 @@ ${dateHTML}
     margin: 0,
     filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
     jsPDF: { format: 'a4', orientation: 'portrait' }
   };
 
@@ -481,7 +498,7 @@ ${dateHTML}
     showToast('✅ PDF downloaded: ' + filename, 3500);
   } catch (error) {
     console.error('PDF generation error:', error);
-    showToast('❌ Error generating PDF. Try again.', 3500);
+    showToast('❌ Error: ' + (error.message || 'PDF generation failed'), 5000);
   }
 }
 </script>
